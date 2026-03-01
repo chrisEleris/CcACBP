@@ -13,7 +13,7 @@ Before creating tests:
 1. **Read** `CLAUDE.md` for project testing standards
 2. **Read** `.claude/tech-stack.md` (if exists) for test framework reference
 3. **Check** existing test patterns in the project
-4. **Identify** the testing framework used (Vitest, Jest, pytest, go test, cargo test)
+4. **Note** the test framework for this project is **Vitest** (not Jest)
 
 ---
 
@@ -37,17 +37,8 @@ Before creating tests:
 
 ### 2. Check Current Coverage
 ```bash
-# JavaScript/TypeScript (Vitest/Jest)
+# TypeScript (Vitest)
 pnpm test --coverage
-
-# Python (pytest)
-pytest --cov=src --cov-report=html
-
-# Go
-go test -cover ./...
-
-# Rust
-cargo tarpaulin
 ```
 
 ### 3. Write Tests Following AAA Pattern
@@ -60,7 +51,7 @@ cargo tarpaulin
 
 ## Test Patterns by Language
 
-### TypeScript/JavaScript (Vitest/Jest)
+### TypeScript (Vitest)
 
 ```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -109,190 +100,6 @@ describe('UserService', () => {
     });
   });
 });
-```
-
-### Python (pytest)
-
-```python
-import pytest
-from unittest.mock import Mock, patch
-
-class TestUserService:
-    @pytest.fixture
-    def mock_db(self):
-        return Mock()
-    
-    @pytest.fixture
-    def service(self, mock_db):
-        return UserService(mock_db)
-    
-    def test_create_user_valid_data(self, service, mock_db):
-        # Arrange
-        user_data = {"email": "test@test.com", "name": "Test"}
-        mock_db.users.create.return_value = {"id": "1", **user_data}
-        
-        # Act
-        user = service.create_user(user_data)
-        
-        # Assert
-        assert user is not None
-        assert user["id"] == "1"
-        assert user["email"] == user_data["email"]
-    
-    def test_create_user_invalid_email(self, service):
-        # Arrange
-        user_data = {"email": "invalid", "name": "Test"}
-        
-        # Act & Assert
-        with pytest.raises(ValueError, match="Invalid email"):
-            service.create_user(user_data)
-    
-    @pytest.mark.asyncio
-    async def test_async_operation(self, service):
-        # Arrange
-        data = {"key": "value"}
-        
-        # Act
-        result = await service.async_method(data)
-        
-        # Assert
-        assert result is not None
-```
-
-### Go (testing)
-
-```go
-package service_test
-
-import (
-    "testing"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
-)
-
-type MockDB struct {
-    mock.Mock
-}
-
-func TestUserService_CreateUser(t *testing.T) {
-    t.Run("should create user with valid data", func(t *testing.T) {
-        // Arrange
-        mockDB := new(MockDB)
-        service := NewUserService(mockDB)
-        userData := UserData{Email: "test@test.com", Name: "Test"}
-        mockDB.On("Create", userData).Return(&User{ID: "1", Email: userData.Email}, nil)
-        
-        // Act
-        user, err := service.CreateUser(userData)
-        
-        // Assert
-        assert.NoError(t, err)
-        assert.NotNil(t, user)
-        assert.Equal(t, userData.Email, user.Email)
-    })
-    
-    t.Run("should return error for invalid email", func(t *testing.T) {
-        // Arrange
-        mockDB := new(MockDB)
-        service := NewUserService(mockDB)
-        userData := UserData{Email: "invalid", Name: "Test"}
-        
-        // Act
-        user, err := service.CreateUser(userData)
-        
-        // Assert
-        assert.Nil(t, user)
-        assert.Error(t, err)
-        assert.Contains(t, err.Error(), "invalid email")
-    })
-}
-
-// Table-driven tests (Go idiom)
-func TestValidateEmail(t *testing.T) {
-    tests := []struct {
-        name    string
-        email   string
-        wantErr bool
-    }{
-        {"valid email", "test@test.com", false},
-        {"invalid - no @", "testtest.com", true},
-        {"invalid - empty", "", true},
-        {"valid - subdomain", "test@sub.test.com", false},
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            err := ValidateEmail(tt.email)
-            if tt.wantErr {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
-            }
-        })
-    }
-}
-```
-
-### Rust (cargo test)
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use mockall::predicate::*;
-
-    #[test]
-    fn test_create_user_valid_data() {
-        // Arrange
-        let mut mock_db = MockDatabase::new();
-        mock_db.expect_create_user()
-            .returning(|data| Ok(User { id: "1".to_string(), email: data.email }));
-        
-        let service = UserService::new(mock_db);
-        let user_data = UserData { 
-            email: "test@test.com".to_string(), 
-            name: "Test".to_string() 
-        };
-        
-        // Act
-        let result = service.create_user(user_data);
-        
-        // Assert
-        assert!(result.is_ok());
-        let user = result.unwrap();
-        assert_eq!(user.email, "test@test.com");
-    }
-
-    #[test]
-    fn test_create_user_invalid_email() {
-        // Arrange
-        let mock_db = MockDatabase::new();
-        let service = UserService::new(mock_db);
-        let user_data = UserData { 
-            email: "invalid".to_string(), 
-            name: "Test".to_string() 
-        };
-        
-        // Act
-        let result = service.create_user(user_data);
-        
-        // Assert
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid email"));
-    }
-
-    #[tokio::test]
-    async fn test_async_operation() {
-        // Arrange
-        let service = create_test_service();
-        
-        // Act
-        let result = service.async_method().await;
-        
-        // Assert
-        assert!(result.is_ok());
-    }
-}
 ```
 
 ---
@@ -390,40 +197,6 @@ vi.advanceTimersByTime(1000);
 vi.useRealTimers();
 ```
 
-### Python (pytest/unittest.mock)
-```python
-from unittest.mock import Mock, patch, AsyncMock
-
-# Mock object
-mock_db = Mock()
-mock_db.query.return_value = [{"id": 1}]
-
-# Patch decorator
-@patch('app.services.db')
-def test_something(mock_db):
-    mock_db.query.return_value = []
-    # test code
-
-# Async mock
-mock_async = AsyncMock(return_value={"data": "test"})
-```
-
-### Go (testify/mock)
-```go
-type MockDB struct {
-    mock.Mock
-}
-
-func (m *MockDB) Query(q string) ([]Row, error) {
-    args := m.Called(q)
-    return args.Get(0).([]Row), args.Error(1)
-}
-
-// In test
-mockDB := new(MockDB)
-mockDB.On("Query", "SELECT *").Return([]Row{}, nil)
-```
-
 ---
 
 ## Quality Standards
@@ -484,29 +257,11 @@ mockDB.On("Query", "SELECT *").Return([]Row{}, nil)
 ## Running Tests
 
 ```bash
-# TypeScript/JavaScript
-pnpm test                    # Run all tests
-pnpm test --watch           # Watch mode
-pnpm test --coverage        # With coverage
-pnpm test -- path/to/test   # Specific file
-
-# Python
-pytest                       # Run all tests
-pytest -v                   # Verbose
-pytest --cov=src            # With coverage
-pytest path/to/test.py      # Specific file
-
-# Go
-go test ./...               # All tests
-go test -v ./...            # Verbose
-go test -cover ./...        # With coverage
-go test ./pkg/service       # Specific package
-
-# Rust
-cargo test                  # All tests
-cargo test -- --nocapture   # Show println output
-cargo tarpaulin            # Coverage
-cargo test test_name       # Specific test
+# TypeScript (Vitest)
+pnpm test                      # Run all tests
+pnpm test --watch              # Watch mode
+pnpm test --coverage           # With coverage
+pnpm test path/to/test.ts      # Specific file
 ```
 
 ---

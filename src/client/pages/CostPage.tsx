@@ -19,6 +19,10 @@ import { costHistory } from "../lib/mock-data";
 const latest = costHistory[costHistory.length - 1];
 const previous = costHistory[costHistory.length - 2];
 
+const YEAR = new Date().getFullYear();
+const currentSubtitle = latest ? `${latest.month} ${YEAR}` : "";
+const previousSubtitle = previous ? `${previous.month} ${YEAR}` : "";
+
 function totalCost(d: typeof latest): number {
   return d ? d.ec2 + d.s3 + d.rds + d.lambda + d.other : 0;
 }
@@ -45,14 +49,14 @@ export function CostPage() {
         <StatCard
           title="Current Month"
           value={`$${currentTotal.toLocaleString()}`}
-          subtitle="Feb 2026"
+          subtitle={currentSubtitle}
           icon={<DollarSign size={22} />}
           color="orange"
         />
         <StatCard
           title="Previous Month"
           value={`$${previousTotal.toLocaleString()}`}
-          subtitle="Jan 2026"
+          subtitle={previousSubtitle}
           icon={<DollarSign size={22} />}
           color="blue"
         />

@@ -22,7 +22,13 @@ import {
 } from "recharts";
 import { StatCard } from "../components/StatCard";
 import { StatusBadge } from "../components/StatusBadge";
-import { cloudWatchAlarms, costHistory, cpuMetrics, ec2Instances } from "../lib/mock-data";
+import {
+  cloudWatchAlarms,
+  costHistory,
+  cpuMetrics,
+  ec2Instances,
+  iamUsers,
+} from "../lib/mock-data";
 
 const alarmsByState = {
   ok: cloudWatchAlarms.filter((a) => a.state === "OK").length,
@@ -40,6 +46,18 @@ const latestCost = costHistory[costHistory.length - 1];
 const totalMonthlyCost = latestCost
   ? latestCost.ec2 + latestCost.s3 + latestCost.rds + latestCost.lambda + latestCost.other
   : 0;
+
+const costSubtitle = latestCost ? `${latestCost.month} ${new Date().getFullYear()}` : "";
+const previousCost = costHistory[costHistory.length - 2];
+const previousTotal = previousCost
+  ? previousCost.ec2 + previousCost.s3 + previousCost.rds + previousCost.lambda + previousCost.other
+  : 0;
+const costChangePercent =
+  previousTotal > 0 ? (((totalMonthlyCost - previousTotal) / previousTotal) * 100).toFixed(1) : "0";
+const costTrendPositive = Number(costChangePercent) <= 0;
+
+const iamUserCount = iamUsers.length;
+const iamMfaCount = iamUsers.filter((u) => u.mfaEnabled).length;
 
 export function DashboardPage() {
   const runningInstances = ec2Instances.filter((i) => i.state === "running").length;
@@ -65,15 +83,18 @@ export function DashboardPage() {
         <StatCard
           title="Monthly Cost"
           value={`$${totalMonthlyCost.toLocaleString()}`}
-          subtitle="Feb 2026"
+          subtitle={costSubtitle}
           icon={<DollarSign size={22} />}
-          trend={{ value: "2.1% from last month", positive: false }}
+          trend={{
+            value: `${Math.abs(Number(costChangePercent))}% from last month`,
+            positive: costTrendPositive,
+          }}
           color="orange"
         />
         <StatCard
           title="IAM Users"
-          value="5"
-          subtitle="4 with MFA"
+          value={iamUserCount}
+          subtitle={`${iamMfaCount} with MFA`}
           icon={<Shield size={22} />}
           color="purple"
         />

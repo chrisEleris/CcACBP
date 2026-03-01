@@ -1,62 +1,13 @@
-export type EC2Instance = {
-  id: string;
-  name: string;
-  type: string;
-  state: "running" | "stopped" | "pending" | "terminated";
-  az: string;
-  publicIp: string;
-  privateIp: string;
-  cpu: number;
-  memory: number;
-  launchTime: string;
-};
-
-export type S3Bucket = {
-  name: string;
-  region: string;
-  sizeGb: number;
-  objects: number;
-  access: "private" | "public-read" | "authenticated-read";
-  versioning: boolean;
-  createdAt: string;
-};
-
-export type CloudWatchAlarm = {
-  name: string;
-  metric: string;
-  namespace: string;
-  state: "OK" | "ALARM" | "INSUFFICIENT_DATA";
-  threshold: string;
-  period: string;
-};
-
-export type IAMUser = {
-  name: string;
-  arn: string;
-  groups: string[];
-  mfaEnabled: boolean;
-  lastActive: string;
-  accessKeys: number;
-};
-
-export type LambdaFunction = {
-  name: string;
-  runtime: string;
-  memory: number;
-  timeout: number;
-  lastInvoked: string;
-  invocations24h: number;
-  errors24h: number;
-};
-
-export type VPC = {
-  id: string;
-  name: string;
-  cidr: string;
-  subnets: number;
-  region: string;
-  isDefault: boolean;
-};
+import type {
+  CloudWatchAlarm,
+  CostData,
+  EC2Instance,
+  IAMUser,
+  LambdaFunction,
+  MetricDataPoint,
+  S3Bucket,
+  VPC,
+} from "@shared/types";
 
 export const ec2Instances: EC2Instance[] = [
   {
@@ -341,15 +292,6 @@ export const vpcs: VPC[] = [
   },
 ];
 
-export type CostData = {
-  month: string;
-  ec2: number;
-  s3: number;
-  rds: number;
-  lambda: number;
-  other: number;
-};
-
 export const costHistory: CostData[] = [
   { month: "Sep", ec2: 2800, s3: 420, rds: 1200, lambda: 85, other: 650 },
   { month: "Oct", ec2: 2950, s3: 435, rds: 1200, lambda: 92, other: 680 },
@@ -359,17 +301,56 @@ export const costHistory: CostData[] = [
   { month: "Feb", ec2: 3150, s3: 495, rds: 1350, lambda: 135, other: 750 },
 ];
 
-export type MetricDataPoint = {
-  time: string;
-  value: number;
-};
+export const cpuMetrics: MetricDataPoint[] = [
+  { time: "00:00", value: 42 },
+  { time: "01:00", value: 38 },
+  { time: "02:00", value: 35 },
+  { time: "03:00", value: 31 },
+  { time: "04:00", value: 29 },
+  { time: "05:00", value: 33 },
+  { time: "06:00", value: 45 },
+  { time: "07:00", value: 58 },
+  { time: "08:00", value: 67 },
+  { time: "09:00", value: 72 },
+  { time: "10:00", value: 75 },
+  { time: "11:00", value: 71 },
+  { time: "12:00", value: 68 },
+  { time: "13:00", value: 73 },
+  { time: "14:00", value: 76 },
+  { time: "15:00", value: 74 },
+  { time: "16:00", value: 69 },
+  { time: "17:00", value: 63 },
+  { time: "18:00", value: 55 },
+  { time: "19:00", value: 49 },
+  { time: "20:00", value: 52 },
+  { time: "21:00", value: 47 },
+  { time: "22:00", value: 44 },
+  { time: "23:00", value: 40 },
+];
 
-export const cpuMetrics: MetricDataPoint[] = Array.from({ length: 24 }, (_, i) => ({
-  time: `${String(i).padStart(2, "0")}:00`,
-  value: Math.floor(20 + Math.random() * 60),
-}));
-
-export const networkMetrics: MetricDataPoint[] = Array.from({ length: 24 }, (_, i) => ({
-  time: `${String(i).padStart(2, "0")}:00`,
-  value: Math.floor(50 + Math.random() * 200),
-}));
+export const networkMetrics: MetricDataPoint[] = [
+  { time: "00:00", value: 82 },
+  { time: "01:00", value: 74 },
+  { time: "02:00", value: 68 },
+  { time: "03:00", value: 61 },
+  { time: "04:00", value: 57 },
+  { time: "05:00", value: 65 },
+  { time: "06:00", value: 98 },
+  { time: "07:00", value: 134 },
+  { time: "08:00", value: 168 },
+  { time: "09:00", value: 187 },
+  { time: "10:00", value: 195 },
+  { time: "11:00", value: 201 },
+  { time: "12:00", value: 178 },
+  { time: "13:00", value: 192 },
+  { time: "14:00", value: 210 },
+  { time: "15:00", value: 205 },
+  { time: "16:00", value: 183 },
+  { time: "17:00", value: 162 },
+  { time: "18:00", value: 141 },
+  { time: "19:00", value: 118 },
+  { time: "20:00", value: 127 },
+  { time: "21:00", value: 110 },
+  { time: "22:00", value: 95 },
+  { time: "23:00", value: 87 },
+];

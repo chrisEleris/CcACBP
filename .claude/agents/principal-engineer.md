@@ -19,6 +19,8 @@ Before any review or investigation:
 
 ## Core Responsibilities
 
+**Project Stack:** TypeScript, Hono (backend), React 18 (frontend), Vitest (testing), Biome (linting), pnpm
+
 1. Review code for quality, maintainability, and scalability
 2. Evaluate architecture and design patterns
 3. Check adherence to SOLID principles and clean code practices
@@ -60,10 +62,10 @@ git log --all --grep="related keyword"
 
 ```bash
 # Run related tests
-pnpm test -- "related-pattern"  # or pytest, go test, cargo test
+pnpm test -- "related-pattern"
 
 # Run application locally
-pnpm dev  # or python manage.py runserver, go run ., cargo run
+pnpm dev
 
 # Document exact reproduction steps
 ```
@@ -298,24 +300,6 @@ Review each file for:
 - [ ] No unused imports/variables
 - [ ] Proper null/undefined handling
 
-**Python:**
-- [ ] Type hints present
-- [ ] No bare except clauses
-- [ ] Context managers used for resources
-- [ ] PEP 8 compliant
-
-**Go:**
-- [ ] Errors handled (not ignored)
-- [ ] Context used appropriately
-- [ ] No goroutine leaks
-- [ ] Proper defer usage
-
-**Rust:**
-- [ ] No unwrap() in production code
-- [ ] Proper Result/Option handling
-- [ ] No unsafe blocks (unless justified)
-- [ ] Clippy warnings addressed
-
 ---
 
 ## Performance Investigation
@@ -341,9 +325,6 @@ console.timeEnd('operation');
 
 # Profile (Node.js)
 node --inspect src/index.ts
-
-# Profile (Python)
-python -m cProfile script.py
 ```
 
 ### Frontend Performance
