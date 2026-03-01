@@ -1,0 +1,88 @@
+import {
+  Activity,
+  Cloud,
+  Database,
+  DollarSign,
+  FileText,
+  LayoutDashboard,
+  Network,
+  Plug,
+  Server,
+  Settings,
+  Shield,
+} from "lucide-react";
+import { type ReactNode, useState } from "react";
+
+type NavItem = {
+  label: string;
+  icon: ReactNode;
+  path: string;
+  badge?: string;
+};
+
+const navItems: NavItem[] = [
+  { label: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/" },
+  { label: "EC2 Instances", icon: <Server size={20} />, path: "/ec2" },
+  { label: "S3 Buckets", icon: <Database size={20} />, path: "/s3" },
+  { label: "CloudWatch", icon: <Activity size={20} />, path: "/cloudwatch" },
+  { label: "IAM", icon: <Shield size={20} />, path: "/iam" },
+  { label: "VPC & Network", icon: <Network size={20} />, path: "/vpc" },
+  { label: "Lambda", icon: <FileText size={20} />, path: "/lambda" },
+  { label: "Cost Explorer", icon: <DollarSign size={20} />, path: "/costs" },
+  { label: "Connectors", icon: <Plug size={20} />, path: "/connectors" },
+  { label: "Settings", icon: <Settings size={20} />, path: "/settings" },
+];
+
+type SidebarProps = {
+  currentPath: string;
+  onNavigate: (path: string) => void;
+};
+
+export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <aside
+      className={`bg-sidebar flex h-screen flex-col text-white transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
+    >
+      <div className="flex items-center gap-3 border-b border-white/10 p-4">
+        <Cloud className="text-aws-orange shrink-0" size={28} />
+        {!collapsed && <span className="text-lg font-bold tracking-tight">AWS Admin</span>}
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {navItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <button
+              key={item.path}
+              type="button"
+              onClick={() => onNavigate(item.path)}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                isActive
+                  ? "bg-sidebar-active text-aws-orange font-medium"
+                  : "hover:bg-sidebar-hover text-gray-300 hover:text-white"
+              }`}
+            >
+              <span className="shrink-0">{item.icon}</span>
+              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && item.badge && (
+                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      <button
+        type="button"
+        onClick={() => setCollapsed(!collapsed)}
+        className="hover:bg-sidebar-hover border-t border-white/10 p-4 text-xs text-gray-400 transition-colors"
+      >
+        {collapsed ? ">>" : "<< Collapse"}
+      </button>
+    </aside>
+  );
+}
