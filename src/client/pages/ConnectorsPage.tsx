@@ -139,19 +139,21 @@ export function ConnectorsPage() {
               <button
                 type="button"
                 onClick={() => setExpandedId(isExpanded ? null : connector.id)}
-                className="flex w-full items-center justify-between p-5 text-left"
+                className="flex w-full items-center justify-between p-4 text-left md:p-5"
               >
-                <div className="flex items-center gap-4">
-                  <div className="rounded-lg bg-gray-700/50 p-2.5">
-                    <connector.icon size={24} className="text-gray-300" />
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="shrink-0 rounded-lg bg-gray-700/50 p-2.5">
+                    <connector.icon size={22} className="text-gray-300" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-medium text-white">{connector.name}</h3>
-                    <p className="mt-0.5 max-w-xl text-xs text-gray-500">{connector.description}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 md:line-clamp-none">
+                      {connector.description}
+                    </p>
                   </div>
                 </div>
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${config.className}`}
+                  className={`ml-3 shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${config.className}`}
                 >
                   {connector.status === "connected" ? (
                     <CheckCircle size={12} />

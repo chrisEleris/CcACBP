@@ -9,7 +9,7 @@ export function EC2Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
             {running} running
@@ -45,17 +45,24 @@ export function EC2Page() {
             key: "type",
             header: "Type",
             render: (i) => <span className="font-mono text-xs">{i.type}</span>,
+            className: "hidden sm:table-cell",
           },
           {
             key: "state",
             header: "State",
             render: (i) => <StatusBadge status={i.state} />,
           },
-          { key: "az", header: "AZ", render: (i) => i.az },
+          {
+            key: "az",
+            header: "AZ",
+            render: (i) => i.az,
+            className: "hidden lg:table-cell",
+          },
           {
             key: "ip",
             header: "Public IP",
             render: (i) => <span className="font-mono text-xs">{i.publicIp}</span>,
+            className: "hidden md:table-cell",
           },
           {
             key: "cpu",
@@ -71,6 +78,7 @@ export function EC2Page() {
                 <span className="text-xs">{i.cpu}%</span>
               </div>
             ),
+            className: "hidden sm:table-cell",
           },
           {
             key: "actions",
@@ -80,33 +88,33 @@ export function EC2Page() {
                 {i.state === "stopped" ? (
                   <button
                     type="button"
-                    className="rounded p-1.5 text-emerald-400 hover:bg-emerald-500/10"
-                    title="Start"
+                    className="rounded p-2 text-emerald-400 hover:bg-emerald-500/10"
+                    aria-label="Start instance"
                   >
-                    <Play size={14} />
+                    <Play size={16} />
                   </button>
                 ) : i.state === "running" ? (
                   <button
                     type="button"
-                    className="rounded p-1.5 text-yellow-400 hover:bg-yellow-500/10"
-                    title="Stop"
+                    className="rounded p-2 text-yellow-400 hover:bg-yellow-500/10"
+                    aria-label="Stop instance"
                   >
-                    <Square size={14} />
+                    <Square size={16} />
                   </button>
                 ) : null}
                 <button
                   type="button"
-                  className="rounded p-1.5 text-blue-400 hover:bg-blue-500/10"
-                  title="Reboot"
+                  className="rounded p-2 text-blue-400 hover:bg-blue-500/10"
+                  aria-label="Reboot instance"
                 >
-                  <RotateCcw size={14} />
+                  <RotateCcw size={16} />
                 </button>
                 <button
                   type="button"
-                  className="rounded p-1.5 text-red-400 hover:bg-red-500/10"
-                  title="Terminate"
+                  className="rounded p-2 text-red-400 hover:bg-red-500/10"
+                  aria-label="Terminate instance"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             ),

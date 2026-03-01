@@ -66,7 +66,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 border-b border-gray-700/50 pb-2">
+      <div className="flex gap-2 overflow-x-auto border-b border-gray-700/50 pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -169,7 +169,7 @@ export function SettingsPage() {
             <div>
               <label className="mb-1 block text-xs text-gray-400">
                 Session Timeout
-                <select className="mt-1 rounded-lg bg-gray-900/50 px-3 py-2 text-sm text-white ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-blue-500">
+                <select className="mt-1 w-full rounded-lg bg-gray-900/50 px-3 py-2 text-sm text-white ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-blue-500">
                   <option>15 minutes</option>
                   <option>30 minutes</option>
                   <option>1 hour</option>
@@ -180,7 +180,7 @@ export function SettingsPage() {
             <div>
               <label className="mb-1 block text-xs text-gray-400">
                 API Key Rotation
-                <select className="mt-1 rounded-lg bg-gray-900/50 px-3 py-2 text-sm text-white ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-blue-500">
+                <select className="mt-1 w-full rounded-lg bg-gray-900/50 px-3 py-2 text-sm text-white ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-blue-500">
                   <option>Every 30 days</option>
                   <option>Every 60 days</option>
                   <option>Every 90 days</option>

@@ -28,6 +28,7 @@ const pageTitles: Record<string, string> = {
 
 function App() {
   const [currentPath, setCurrentPath] = useState("/");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function renderPage() {
     switch (currentPath) {
@@ -58,10 +59,28 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-900">
-      <Sidebar currentPath={currentPath} onNavigate={setCurrentPath} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header title={pageTitles[currentPath] ?? "Dashboard"} />
-        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-20 bg-black/60 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close navigation"
+        />
+      )}
+      <Sidebar
+        currentPath={currentPath}
+        onNavigate={(path) => {
+          setCurrentPath(path);
+          setSidebarOpen(false);
+        }}
+        mobileOpen={sidebarOpen}
+      />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Header
+          title={pageTitles[currentPath] ?? "Dashboard"}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">{renderPage()}</main>
       </div>
     </div>
   );

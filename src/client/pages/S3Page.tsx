@@ -19,7 +19,7 @@ export function S3Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">
             {s3Buckets.length} buckets — {formatSize(totalSize)} — {totalObjects.toLocaleString()}{" "}
@@ -44,7 +44,12 @@ export function S3Page() {
             header: "Bucket Name",
             render: (b) => <span className="font-medium text-white">{b.name}</span>,
           },
-          { key: "region", header: "Region", render: (b) => b.region },
+          {
+            key: "region",
+            header: "Region",
+            render: (b) => b.region,
+            className: "hidden md:table-cell",
+          },
           {
             key: "size",
             header: "Size",
@@ -77,11 +82,13 @@ export function S3Page() {
               ) : (
                 <XCircle size={16} className="text-gray-500" />
               ),
+            className: "hidden sm:table-cell",
           },
           {
             key: "created",
             header: "Created",
             render: (b) => b.createdAt,
+            className: "hidden lg:table-cell",
           },
         ]}
       />

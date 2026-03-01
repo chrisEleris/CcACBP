@@ -15,14 +15,14 @@ type DataTableProps<T> = {
 
 export function DataTable<T>({ columns, data, keyExtractor }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-700/50 bg-gray-800/50">
-      <table className="w-full text-left text-sm">
+    <div className="min-w-0 overflow-x-auto rounded-xl border border-gray-700/50 bg-gray-800/50">
+      <table className="min-w-[640px] w-full text-left text-sm">
         <thead>
           <tr className="border-b border-gray-700/50">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase ${col.className ?? ""}`}
+                className={`whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase ${col.className ?? ""}`}
               >
                 {col.header}
               </th>

@@ -23,7 +23,7 @@ export function StatCard({ title, value, subtitle, icon, trend, color = "blue" }
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-400">{title}</p>
-          <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+          <p className="mt-1 text-xl font-bold text-white md:text-2xl">{value}</p>
           {subtitle && <p className="mt-0.5 text-xs text-gray-500">{subtitle}</p>}
           {trend && (
             <p

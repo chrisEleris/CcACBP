@@ -108,10 +108,25 @@ export function CloudWatchPage() {
             header: "Alarm Name",
             render: (a) => <span className="font-medium text-white">{a.name}</span>,
           },
-          { key: "namespace", header: "Namespace", render: (a) => a.namespace },
+          {
+            key: "namespace",
+            header: "Namespace",
+            render: (a) => a.namespace,
+            className: "hidden md:table-cell",
+          },
           { key: "metric", header: "Metric", render: (a) => a.metric },
-          { key: "threshold", header: "Threshold", render: (a) => a.threshold },
-          { key: "period", header: "Period", render: (a) => a.period },
+          {
+            key: "threshold",
+            header: "Threshold",
+            render: (a) => a.threshold,
+            className: "hidden sm:table-cell",
+          },
+          {
+            key: "period",
+            header: "Period",
+            render: (a) => a.period,
+            className: "hidden lg:table-cell",
+          },
           {
             key: "state",
             header: "State",

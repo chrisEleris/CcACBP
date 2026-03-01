@@ -65,7 +65,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           title="EC2 Instances"
           value={`${runningInstances}/${ec2Instances.length}`}
@@ -100,8 +100,8 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5 lg:col-span-2">
           <h3 className="mb-4 text-sm font-medium text-gray-400">
             CPU Utilization (avg) — Last 24h
           </h3>
@@ -135,7 +135,7 @@ export function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5">
           <h3 className="mb-4 text-sm font-medium text-gray-400">Alarm Status</h3>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
@@ -161,7 +161,7 @@ export function DashboardPage() {
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="mt-2 flex justify-center gap-4">
+          <div className="mt-2 flex flex-wrap justify-center gap-3">
             {pieData.map((entry) => (
               <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-400">
                 <span
@@ -176,7 +176,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5">
           <h3 className="mb-4 text-sm font-medium text-gray-400">Active Alarms</h3>
           {activeAlarms.length === 0 ? (
             <div className="flex items-center gap-2 py-8 text-center text-emerald-400">
@@ -188,13 +188,13 @@ export function DashboardPage() {
               {activeAlarms.map((alarm) => (
                 <div
                   key={alarm.name}
-                  className="flex items-center justify-between rounded-lg bg-red-500/5 p-3 ring-1 ring-inset ring-red-500/20"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-red-500/5 p-3 ring-1 ring-inset ring-red-500/20"
                 >
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle size={16} className="text-red-400" />
-                    <div>
-                      <p className="text-sm font-medium text-white">{alarm.name}</p>
-                      <p className="text-xs text-gray-400">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <AlertTriangle size={16} className="shrink-0 text-red-400" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">{alarm.name}</p>
+                      <p className="truncate text-xs text-gray-400">
                         {alarm.namespace} — {alarm.metric} {alarm.threshold}
                       </p>
                     </div>
@@ -206,9 +206,9 @@ export function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5">
           <h3 className="mb-4 text-sm font-medium text-gray-400">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
               { icon: <Server size={18} />, label: "Launch Instance", color: "text-blue-400" },
               { icon: <Database size={18} />, label: "Create Bucket", color: "text-emerald-400" },

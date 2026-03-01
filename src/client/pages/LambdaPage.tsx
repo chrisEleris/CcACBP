@@ -44,8 +44,18 @@ export function LambdaPage() {
             header: "Runtime",
             render: (f) => <span className="font-mono text-xs">{f.runtime}</span>,
           },
-          { key: "memory", header: "Memory", render: (f) => `${f.memory} MB` },
-          { key: "timeout", header: "Timeout", render: (f) => `${f.timeout}s` },
+          {
+            key: "memory",
+            header: "Memory",
+            render: (f) => `${f.memory} MB`,
+            className: "hidden sm:table-cell",
+          },
+          {
+            key: "timeout",
+            header: "Timeout",
+            render: (f) => `${f.timeout}s`,
+            className: "hidden md:table-cell",
+          },
           {
             key: "invocations",
             header: "Invocations (24h)",
@@ -63,7 +73,12 @@ export function LambdaPage() {
           {
             key: "lastInvoked",
             header: "Last Invoked",
-            render: (f) => new Date(f.lastInvoked).toLocaleTimeString(),
+            render: (f) =>
+              new Date(f.lastInvoked).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            className: "hidden sm:table-cell",
           },
         ]}
       />
