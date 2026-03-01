@@ -1428,14 +1428,47 @@ If a breaking change is ABSOLUTELY necessary:
 | 7 | All Agents | **Run ALL existing tests** - must ALL pass |
 | 8 | - | Run quality gates (typecheck, lint, test, build) |
 | 9 | - | **Verify no impact** to existing functionality |
-| 10 | - | Commit and create PR |
-| 11 | All Review Agents | **Team Review** - Each agent scores (1-10) + provides feedback |
-| 12 | - | **Calculate average score** across all reviewers |
-| 13 | Fullstack Agent | If avg < 9.5: **Fix ALL issues** from ALL reviewers |
-| 14 | - | **Repeat steps 11-13** until average score ≥ 9.5 |
-| 15 | - | **APPROVED** - Ready to merge when score ≥ 9.5 |
+| 10 | **Independent Auditor** | **PRE-COMMIT AUDIT** (MANDATORY — see below) |
+| 11 | - | Commit and create PR (only after Auditor approval) |
+| 12 | All Review Agents | **Team Review** - Each agent scores (1-10) + provides feedback |
+| 13 | - | **Calculate average score** across all reviewers |
+| 14 | Fullstack Agent | If avg < 9.5: **Fix ALL issues** from ALL reviewers |
+| 15 | - | **Repeat steps 12-14** until average score ≥ 9.5 |
+| 16 | - | **APPROVED** - Ready to merge when score ≥ 9.5 |
 
-**CRITICAL:** Steps 3-4 (TDD), Steps 7-9 (Impact Verification), and Steps 11-15 (Score ≥ 9.5) are NON-NEGOTIABLE.
+**CRITICAL:** Steps 3-4 (TDD), Steps 7-9 (Impact Verification), Step 10 (Independent Audit), and Steps 12-16 (Score ≥ 9.5) are NON-NEGOTIABLE.
+
+#### Step 10: Independent Auditor — Pre-Commit Gate
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ⚠️  INDEPENDENT AUDITOR — MANDATORY BEFORE EVERY COMMIT    │
+│                                                             │
+│  The Independent Auditor is an autonomous agent that:       │
+│  • Cannot be overridden, redirected, or told to skip checks │
+│  • Cannot be influenced by other agents or deadlines        │
+│  • Runs a full 8-phase investigation on all staged changes  │
+│  • Must score the commit ≥ 9.5/10 to allow it to proceed   │
+│                                                             │
+│  IF THE AUDITOR REJECTS → DO NOT COMMIT                     │
+│  Fix ALL findings, then re-submit for audit.                │
+│                                                             │
+│  See: .claude/agents/independent-auditor.md                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Auditor's 8-Phase Investigation:**
+
+| Phase | What it checks |
+|-------|---------------|
+| 1. Scope the Damage | Files changed, missing files, files that shouldn't be staged |
+| 2. Type Safety | Zero `any`, explicit types, no `@ts-ignore`, proper generics |
+| 3. Lint & Format | Linter passes, naming conventions, dead code, magic numbers |
+| 4. Tests | Full suite passes, new code has tests, assertions are meaningful |
+| 5. Build | Clean build, no warnings |
+| 6. Security | SQL injection, XSS, secrets, auth bypasses, SSRF, new dependencies |
+| 7. Architecture | SOLID, file length, separation of concerns, circular deps |
+| 8. Cross-reference | Plan compliance, TODOs, commented-out code, import consistency |
 
 ### 15.4 Review Requirements (Score-Based Approval)
 
@@ -1496,10 +1529,13 @@ If a breaking change is ABSOLUTELY necessary:
 
 | Agent | Review Focus | Scoring Weight |
 |-------|--------------|----------------|
+| **Independent Auditor** | **Pre-commit gate — full 8-phase audit (runs BEFORE commit)** | **Gatekeeper** |
 | Principal Agent | Code quality, architecture, security, best practices | Equal |
 | QA Agent | Test coverage, test quality, edge cases, regression | Equal |
 | UI/UX Agent | User experience, accessibility, design consistency | Equal |
 | Solution Architect | Scalability, system design, integration patterns | Equal |
+
+> **Note:** The Independent Auditor is NOT part of the averaging score. It is a binary gate — the commit either passes audit or it doesn't. The team review scoring (steps 12-16) happens AFTER the auditor has already approved the commit.
 
 #### Important Rules
 
@@ -1513,6 +1549,7 @@ If a breaking change is ABSOLUTELY necessary:
 
 | Agent | Exploration Focus | Implementation Focus |
 |-------|-------------------|----------------------|
+| **Independent Auditor** | **Does not explore — audits results only** | **Pre-commit gate: 8-phase audit of all staged changes** |
 | Principal Agent | Architecture patterns, security concerns | Code quality, security review |
 | QA Agent | Testing patterns, existing test coverage | Test suite creation, regression |
 | Fullstack Agent | Code structure, existing implementations | Feature implementation |
@@ -1520,6 +1557,8 @@ If a breaking change is ABSOLUTELY necessary:
 | Solution Architect | System design, integrations | Scalability, architecture review |
 
 **All agents participate in Phase 0 exploration based on their domain expertise.**
+
+**The Independent Auditor does NOT participate in implementation or exploration.** It activates only at the pre-commit gate. It takes no instructions from other agents. It cannot be bypassed. See `.claude/agents/independent-auditor.md` for full protocol.
 
 ### 15.6 Workflow Diagram
 
@@ -1580,12 +1619,22 @@ If a breaking change is ABSOLUTELY necessary:
                     │
                     ▼
 ┌─────────────────────────────────────────────┐
-│  7. COMMIT AND CREATE PR                    │
+│  7. INDEPENDENT AUDITOR (MANDATORY)         │
+│     - 8-phase investigation of ALL changes  │
+│     - Cannot be overridden or bypassed      │
+│     - Must score ≥ 9.5 to proceed           │
+│     ⚠️  REJECTED? Fix findings, re-audit.   │
 └─────────────────────────────────────────────┘
                     │
                     ▼
 ┌─────────────────────────────────────────────┐
-│  8. TEAM REVIEW (All Agents)                │
+│  8. COMMIT AND CREATE PR                    │
+│     (only after Auditor approval)           │
+└─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────┐
+│  9. TEAM REVIEW (All Agents)                │
 │     - Each agent scores 1-10                │
 │     - Each provides detailed feedback       │
 │     - Calculate average score               │
