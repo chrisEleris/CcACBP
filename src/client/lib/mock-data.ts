@@ -1,12 +1,19 @@
 import type {
+  AiLogAnalysis,
   CloudWatchAlarm,
   CostData,
   EC2Instance,
   IAMUser,
   LambdaFunction,
+  LogEntry,
+  LogGroup,
   MetricDataPoint,
   S3Bucket,
   VPC,
+  WafRule,
+  WafTopThreat,
+  WafTrafficData,
+  WafWebAcl,
 } from "@shared/types";
 
 export const ec2Instances: EC2Instance[] = [
@@ -353,4 +360,483 @@ export const networkMetrics: MetricDataPoint[] = [
   { time: "21:00", value: 110 },
   { time: "22:00", value: 95 },
   { time: "23:00", value: 87 },
+];
+
+// ─── Log Explorer ─────────────────────────────────────────────────────────────
+
+export const logGroups: LogGroup[] = [
+  {
+    name: "/aws/lambda/api-auth-handler",
+    retentionDays: 30,
+    storedBytes: 524288000,
+    streamCount: 12,
+    lastEvent: "2026-03-01T10:58:42.000Z",
+  },
+  {
+    name: "/aws/lambda/image-resize",
+    retentionDays: 14,
+    storedBytes: 209715200,
+    streamCount: 8,
+    lastEvent: "2026-03-01T10:55:10.000Z",
+  },
+  {
+    name: "/ecs/prod-web",
+    retentionDays: 90,
+    storedBytes: 2147483648,
+    streamCount: 24,
+    lastEvent: "2026-03-01T10:59:01.000Z",
+  },
+  {
+    name: "/aws/apigateway/prod-api",
+    retentionDays: 7,
+    storedBytes: 104857600,
+    streamCount: 4,
+    lastEvent: "2026-03-01T10:57:33.000Z",
+  },
+  {
+    name: "/aws/waf/prod-acl",
+    retentionDays: 30,
+    storedBytes: 314572800,
+    streamCount: 2,
+    lastEvent: "2026-03-01T10:58:55.000Z",
+  },
+];
+
+export const logEntries: LogEntry[] = [
+  {
+    id: "log-001",
+    timestamp: "2026-03-01T10:58:42.345Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "ERROR",
+    message: "Task timed out after 30.01 seconds",
+    requestId: "f3a1b2c3-d4e5-f6a7-b8c9-d0e1f2a3b4c5",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-002",
+    timestamp: "2026-03-01T10:57:18.112Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "WARN",
+    message: "Cold start detected — init duration 1234ms. Consider provisioned concurrency.",
+    requestId: "a9b8c7d6-e5f4-a3b2-c1d0-e9f8a7b6c5d4",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-003",
+    timestamp: "2026-03-01T10:56:05.889Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "INFO",
+    message: "START RequestId: c3d4e5f6-a7b8-c9d0-e1f2-a3b4c5d6e7f8 Version: $LATEST",
+    requestId: "c3d4e5f6-a7b8-c9d0-e1f2-a3b4c5d6e7f8",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-004",
+    timestamp: "2026-03-01T10:55:59.001Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "FATAL",
+    message:
+      "FATAL ERROR: CALL_AND_RETRY_LAST Allocation failed - JavaScript heap out of memory. Memory limit 256 MB exceeded.",
+    requestId: "d4e5f6a7-b8c9-d0e1-f2a3-b4c5d6e7f8a9",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-005",
+    timestamp: "2026-03-01T10:54:22.774Z",
+    logGroup: "/aws/lambda/image-resize",
+    logStream: "2026/03/01/[$LATEST]b2c3d4e5f6a7",
+    level: "INFO",
+    message:
+      "Image resize complete: input=s3://prod-assets-cdn/uploads/photo-4928.jpg output=s3://prod-assets-cdn/thumbnails/photo-4928_thumb.jpg duration=340ms",
+    requestId: "e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8a9b0",
+    source: "image-resize",
+  },
+  {
+    id: "log-006",
+    timestamp: "2026-03-01T10:53:10.330Z",
+    logGroup: "/aws/lambda/image-resize",
+    logStream: "2026/03/01/[$LATEST]b2c3d4e5f6a7",
+    level: "WARN",
+    message:
+      "Unsupported image format HEIC detected, falling back to ImageMagick conversion — this may be slower.",
+    requestId: "f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8a9b0c1",
+    source: "image-resize",
+  },
+  {
+    id: "log-007",
+    timestamp: "2026-03-01T10:52:44.002Z",
+    logGroup: "/aws/lambda/image-resize",
+    logStream: "2026/03/01/[$LATEST]b2c3d4e5f6a7",
+    level: "ERROR",
+    message:
+      "Failed to read source object: NoSuchKey: The specified key does not exist. Key=uploads/missing-asset.png",
+    requestId: "a7b8c9d0-e1f2-a3b4-c5d6-e7f8a9b0c1d2",
+    source: "image-resize",
+  },
+  {
+    id: "log-008",
+    timestamp: "2026-03-01T10:51:30.500Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-01/d4e5f6a7b8c9d0e1",
+    level: "INFO",
+    message:
+      "Health check passed: GET /health HTTP/1.1 200 OK — upstream: 10.0.1.15:8080 response_time=12ms",
+    source: "prod-web",
+  },
+  {
+    id: "log-009",
+    timestamp: "2026-03-01T10:50:15.991Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-02/e5f6a7b8c9d0e1f2",
+    level: "WARN",
+    message:
+      "Container prod-web-02 memory usage at 89% (1.8GB/2GB). Consider scaling or increasing task definition memory.",
+    source: "prod-web",
+  },
+  {
+    id: "log-010",
+    timestamp: "2026-03-01T10:49:03.218Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-01/d4e5f6a7b8c9d0e1",
+    level: "ERROR",
+    message:
+      "Container exited with code 137 (OOMKilled). Task arn:aws:ecs:us-east-1:123456789012:task/prod/f1a2b3 stopped.",
+    source: "prod-web",
+  },
+  {
+    id: "log-011",
+    timestamp: "2026-03-01T10:48:50.667Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-01/d4e5f6a7b8c9d0e1",
+    level: "INFO",
+    message:
+      "New task started: arn:aws:ecs:us-east-1:123456789012:task/prod/g2b3c4. Pulling image.",
+    source: "prod-web",
+  },
+  {
+    id: "log-012",
+    timestamp: "2026-03-01T10:47:22.445Z",
+    logGroup: "/aws/apigateway/prod-api",
+    logStream: "prod-api/2026/03/01",
+    level: "ERROR",
+    message:
+      "HTTP 502 Bad Gateway: Integration response timeout after 29000ms. Route=POST /api/v2/orders Integration=Lambda:webhook-processor",
+    requestId: "b8c9d0e1-f2a3-b4c5-d6e7-f8a9b0c1d2e3",
+    source: "apigateway",
+  },
+  {
+    id: "log-013",
+    timestamp: "2026-03-01T10:46:14.882Z",
+    logGroup: "/aws/apigateway/prod-api",
+    logStream: "prod-api/2026/03/01",
+    level: "WARN",
+    message:
+      "HTTP 429 Too Many Requests: throttling limit exceeded for stage prod. Client IP=203.0.113.42 Usage=5000/5000 per minute.",
+    requestId: "c9d0e1f2-a3b4-c5d6-e7f8-a9b0c1d2e3f4",
+    source: "apigateway",
+  },
+  {
+    id: "log-014",
+    timestamp: "2026-03-01T10:45:55.119Z",
+    logGroup: "/aws/apigateway/prod-api",
+    logStream: "prod-api/2026/03/01",
+    level: "INFO",
+    message:
+      "HTTP 200 OK: GET /api/v2/users/me route=prod-api latency=43ms requestId=d0e1f2a3-b4c5-d6e7-f8a9-b0c1d2e3f4a5",
+    requestId: "d0e1f2a3-b4c5-d6e7-f8a9-b0c1d2e3f4a5",
+    source: "apigateway",
+  },
+  {
+    id: "log-015",
+    timestamp: "2026-03-01T10:44:38.300Z",
+    logGroup: "/aws/waf/prod-acl",
+    logStream: "waf/prod-acl/2026/03/01",
+    level: "WARN",
+    message:
+      "WAF BLOCK: Rule=AWSManagedRulesSQLiRuleSet/SQLi_BODY action=BLOCK ip=45.227.255.100 country=CN uri=/api/v2/search?q=1%27+OR+1%3D1--",
+    source: "waf",
+  },
+  {
+    id: "log-016",
+    timestamp: "2026-03-01T10:43:20.778Z",
+    logGroup: "/aws/waf/prod-acl",
+    logStream: "waf/prod-acl/2026/03/01",
+    level: "WARN",
+    message:
+      "WAF BLOCK: Rule=RateLimitRule action=BLOCK ip=198.51.100.77 country=RU requests=2001 window=5min threshold=2000",
+    source: "waf",
+  },
+  {
+    id: "log-017",
+    timestamp: "2026-03-01T10:42:05.554Z",
+    logGroup: "/aws/waf/prod-acl",
+    logStream: "waf/prod-acl/2026/03/01",
+    level: "INFO",
+    message:
+      "WAF ALLOW: Rule=AWSManagedRulesCommonRuleSet/None action=ALLOW ip=1.2.3.4 country=US uri=/api/v2/products",
+    source: "waf",
+  },
+  {
+    id: "log-018",
+    timestamp: "2026-03-01T10:40:59.001Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "DEBUG",
+    message:
+      "JWT validation: token_exp=2026-03-01T11:40:59Z now=2026-03-01T10:40:59Z valid=true sub=user_8f2a3b4c",
+    requestId: "e1f2a3b4-c5d6-e7f8-a9b0-c1d2e3f4a5b6",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-019",
+    timestamp: "2026-03-01T10:39:44.123Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-02/e5f6a7b8c9d0e1f2",
+    level: "DEBUG",
+    message:
+      "nginx upstream keepalive: pool=10.0.1.20:8080 active=42 idle=8 waiting=0 accepts=18920 handled=18920 requests=104382",
+    source: "prod-web",
+  },
+  {
+    id: "log-020",
+    timestamp: "2026-03-01T10:38:30.900Z",
+    logGroup: "/aws/lambda/api-auth-handler",
+    logStream: "2026/03/01/[$LATEST]a1b2c3d4e5f6",
+    level: "INFO",
+    message:
+      "END RequestId: f2a3b4c5-d6e7-f8a9-b0c1-d2e3f4a5b6c7 Duration: 245.32 ms Billed Duration: 246 ms Memory Size: 256 MB Max Memory Used: 178 MB",
+    requestId: "f2a3b4c5-d6e7-f8a9-b0c1-d2e3f4a5b6c7",
+    source: "api-auth-handler",
+  },
+  {
+    id: "log-021",
+    timestamp: "2026-03-01T10:37:12.445Z",
+    logGroup: "/aws/apigateway/prod-api",
+    logStream: "prod-api/2026/03/01",
+    level: "ERROR",
+    message:
+      "HTTP 500 Internal Server Error: Unhandled exception in Lambda integration. Check CloudWatch logs for function api-auth-handler. requestId=a3b4c5d6-e7f8-a9b0-c1d2-e3f4a5b6c7d8",
+    requestId: "a3b4c5d6-e7f8-a9b0-c1d2-e3f4a5b6c7d8",
+    source: "apigateway",
+  },
+  {
+    id: "log-022",
+    timestamp: "2026-03-01T10:35:00.000Z",
+    logGroup: "/ecs/prod-web",
+    logStream: "ecs/prod-web-01/d4e5f6a7b8c9d0e1",
+    level: "WARN",
+    message:
+      "Slow response detected: POST /api/v2/checkout upstream=10.0.1.15:8080 response_time=4821ms threshold=2000ms",
+    source: "prod-web",
+  },
+];
+
+export const aiLogAnalysis: AiLogAnalysis = {
+  summary:
+    "Multiple critical issues detected in the last 2 hours. A Lambda OOM crash on api-auth-handler is causing cascading 500 errors through API Gateway. ECS container instability (OOMKilled exit code 137) suggests insufficient memory allocation across the board.",
+  severity: "critical",
+  rootCause:
+    "Memory pressure across compute resources. Lambda function api-auth-handler is running at the 256 MB limit with peak usage at 178 MB, leaving minimal headroom. The ECS prod-web task is consistently hitting 89%+ memory utilization, triggering kernel OOM killer. These are likely correlated with the observed traffic spike.",
+  recommendation:
+    "Immediately increase Lambda memory to 512 MB and ECS task definition memory to 3 GB. Enable Lambda Provisioned Concurrency to eliminate cold starts. Set up CloudWatch alarms for memory utilization > 80%. Consider enabling auto-scaling for the ECS service based on memory metrics.",
+  relatedPatterns: [
+    "OOM errors correlate with traffic peaks between 10:45–11:00 UTC",
+    "Cold start warning on api-auth-handler suggests burst traffic",
+    "API Gateway 502s are downstream symptoms of Lambda timeouts",
+    "WAF rate limiting indicates potential DDoS or scraping activity",
+    "image-resize errors on missing S3 keys suggest stale reference data",
+  ],
+};
+
+// ─── WAF Rule Analysis ────────────────────────────────────────────────────────
+
+export const wafRules: WafRule[] = [
+  {
+    id: "rule-001",
+    name: "AWSManagedRulesCommonRuleSet",
+    priority: 1,
+    action: "BLOCK",
+    type: "MANAGED",
+    ruleGroup: "AWS Managed Rules",
+    matchesLast24h: 14832,
+    blockRate: 94.2,
+    enabled: true,
+    description:
+      "AWS Managed Rules general protection against common web exploits including OWASP Top 10.",
+  },
+  {
+    id: "rule-002",
+    name: "AWSManagedRulesSQLiRuleSet",
+    priority: 2,
+    action: "BLOCK",
+    type: "MANAGED",
+    ruleGroup: "AWS Managed Rules",
+    matchesLast24h: 3204,
+    blockRate: 99.8,
+    enabled: true,
+    description:
+      "Protects against SQL injection attacks by inspecting URI, query string, and body.",
+  },
+  {
+    id: "rule-003",
+    name: "AWSManagedRulesKnownBadInputsRuleSet",
+    priority: 3,
+    action: "BLOCK",
+    type: "MANAGED",
+    ruleGroup: "AWS Managed Rules",
+    matchesLast24h: 2118,
+    blockRate: 97.1,
+    enabled: true,
+    description:
+      "Blocks request patterns associated with exploitation of vulnerabilities like Log4JRCE.",
+  },
+  {
+    id: "rule-004",
+    name: "RateLimitRule-2000rpm",
+    priority: 4,
+    action: "BLOCK",
+    type: "RATE_BASED",
+    ruleGroup: "Custom Rules",
+    matchesLast24h: 8921,
+    blockRate: 72.4,
+    enabled: true,
+    description: "Rate-based rule: blocks IPs exceeding 2000 requests per 5-minute rolling window.",
+  },
+  {
+    id: "rule-005",
+    name: "GeoBlockHighRiskCountries",
+    priority: 5,
+    action: "BLOCK",
+    type: "REGULAR",
+    ruleGroup: "Custom Rules",
+    matchesLast24h: 5430,
+    blockRate: 100.0,
+    enabled: true,
+    description: "Blocks all traffic originating from high-risk geolocations (CN, RU, KP, IR).",
+  },
+  {
+    id: "rule-006",
+    name: "AWSManagedRulesIPReputationList",
+    priority: 6,
+    action: "BLOCK",
+    type: "MANAGED",
+    ruleGroup: "AWS Managed Rules",
+    matchesLast24h: 1876,
+    blockRate: 89.3,
+    enabled: true,
+    description:
+      "Blocks requests from IP addresses with poor reputation based on Amazon threat intelligence.",
+  },
+  {
+    id: "rule-007",
+    name: "BotControlManagedRuleSet",
+    priority: 7,
+    action: "COUNT",
+    type: "MANAGED",
+    ruleGroup: "AWS Managed Rules",
+    matchesLast24h: 6720,
+    blockRate: 0.0,
+    enabled: true,
+    description:
+      "Counts bot traffic (verified bots are allowed). Use COUNT mode to monitor before switching to BLOCK.",
+  },
+  {
+    id: "rule-008",
+    name: "CustomXSSProtection",
+    priority: 8,
+    action: "BLOCK",
+    type: "REGULAR",
+    ruleGroup: "Custom Rules",
+    matchesLast24h: 344,
+    blockRate: 91.6,
+    enabled: false,
+    description:
+      "Custom XSS protection rule inspecting HTML, script tags in request body and query string.",
+  },
+];
+
+export const wafWebAcl: WafWebAcl = {
+  id: "acl-0a1b2c3d4e5f6g7h8",
+  name: "prod-web-acl",
+  region: "us-east-1",
+  rulesCount: 8,
+  requestsSampled: 284920,
+  blockedRequests: 43505,
+  allowedRequests: 241415,
+};
+
+export const wafTraffic: WafTrafficData[] = [
+  { time: "00:00", allowed: 7820, blocked: 820, counted: 340 },
+  { time: "01:00", allowed: 6450, blocked: 710, counted: 290 },
+  { time: "02:00", allowed: 5120, blocked: 640, counted: 210 },
+  { time: "03:00", allowed: 4380, blocked: 580, counted: 180 },
+  { time: "04:00", allowed: 4110, blocked: 560, counted: 170 },
+  { time: "05:00", allowed: 5540, blocked: 690, counted: 240 },
+  { time: "06:00", allowed: 8930, blocked: 1020, counted: 410 },
+  { time: "07:00", allowed: 11200, blocked: 1340, counted: 520 },
+  { time: "08:00", allowed: 14850, blocked: 1780, counted: 640 },
+  { time: "09:00", allowed: 16420, blocked: 2010, counted: 710 },
+  { time: "10:00", allowed: 17840, blocked: 2240, counted: 820 },
+  { time: "11:00", allowed: 18320, blocked: 10450, counted: 890 },
+  { time: "12:00", allowed: 15200, blocked: 3120, counted: 780 },
+  { time: "13:00", allowed: 16080, blocked: 2580, counted: 810 },
+  { time: "14:00", allowed: 17500, blocked: 2190, counted: 850 },
+  { time: "15:00", allowed: 17100, blocked: 2050, counted: 830 },
+  { time: "16:00", allowed: 15700, blocked: 1870, counted: 760 },
+  { time: "17:00", allowed: 13400, blocked: 1620, counted: 680 },
+  { time: "18:00", allowed: 11200, blocked: 1380, counted: 590 },
+  { time: "19:00", allowed: 9800, blocked: 1180, counted: 480 },
+  { time: "20:00", allowed: 10200, blocked: 1240, counted: 510 },
+  { time: "21:00", allowed: 9100, blocked: 1080, counted: 440 },
+  { time: "22:00", allowed: 8400, blocked: 960, counted: 390 },
+  { time: "23:00", allowed: 7900, blocked: 880, counted: 360 },
+];
+
+export const wafTopThreats: WafTopThreat[] = [
+  {
+    source: "45.227.255.100",
+    country: "🇨🇳 China",
+    requests: 8420,
+    blocked: 8420,
+    ruleTriggered: "GeoBlockHighRiskCountries",
+  },
+  {
+    source: "198.51.100.77",
+    country: "🇷🇺 Russia",
+    requests: 6210,
+    blocked: 6210,
+    ruleTriggered: "RateLimitRule-2000rpm",
+  },
+  {
+    source: "203.0.113.42",
+    country: "🇧🇷 Brazil",
+    requests: 5880,
+    blocked: 4244,
+    ruleTriggered: "AWSManagedRulesSQLiRuleSet",
+  },
+  {
+    source: "192.0.2.88",
+    country: "🇩🇪 Germany",
+    requests: 3920,
+    blocked: 1960,
+    ruleTriggered: "RateLimitRule-2000rpm",
+  },
+  {
+    source: "185.220.101.44",
+    country: "🇳🇱 Netherlands",
+    requests: 2840,
+    blocked: 2756,
+    ruleTriggered: "AWSManagedRulesIPReputationList",
+  },
+  {
+    source: "103.75.190.12",
+    country: "🇮🇳 India",
+    requests: 2210,
+    blocked: 884,
+    ruleTriggered: "AWSManagedRulesCommonRuleSet",
+  },
 ];

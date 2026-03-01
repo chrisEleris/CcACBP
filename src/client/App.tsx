@@ -9,9 +9,11 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EC2Page } from "./pages/EC2Page";
 import { IAMPage } from "./pages/IAMPage";
 import { LambdaPage } from "./pages/LambdaPage";
+import { LogExplorerPage } from "./pages/LogExplorerPage";
 import { S3Page } from "./pages/S3Page";
 import { SettingsPage } from "./pages/SettingsPage";
 import { VPCPage } from "./pages/VPCPage";
+import { WafPage } from "./pages/WafPage";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -22,6 +24,8 @@ const pageTitles: Record<string, string> = {
   "/vpc": "VPC & Networking",
   "/lambda": "Lambda Functions",
   "/costs": "Cost Explorer",
+  "/logs": "Log Explorer",
+  "/waf": "WAF Rules",
   "/connectors": "Connectors",
   "/settings": "Settings",
 };
@@ -48,6 +52,10 @@ function App() {
         return <LambdaPage />;
       case "/costs":
         return <CostPage />;
+      case "/logs":
+        return <LogExplorerPage />;
+      case "/waf":
+        return <WafPage />;
       case "/connectors":
         return <ConnectorsPage />;
       case "/settings":

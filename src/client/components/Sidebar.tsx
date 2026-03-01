@@ -9,9 +9,11 @@ import {
   LayoutDashboard,
   Network,
   Plug,
+  ScrollText,
   Server,
   Settings,
   Shield,
+  ShieldCheck,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
@@ -27,10 +29,12 @@ const navItems: NavItem[] = [
   { label: "EC2 Instances", icon: <Server size={20} />, path: "/ec2" },
   { label: "S3 Buckets", icon: <Database size={20} />, path: "/s3" },
   { label: "CloudWatch", icon: <Activity size={20} />, path: "/cloudwatch" },
+  { label: "Log Explorer", icon: <ScrollText size={20} />, path: "/logs" },
   { label: "IAM", icon: <Shield size={20} />, path: "/iam" },
   { label: "VPC & Network", icon: <Network size={20} />, path: "/vpc" },
   { label: "Lambda", icon: <FileText size={20} />, path: "/lambda" },
   { label: "Cost Explorer", icon: <DollarSign size={20} />, path: "/costs" },
+  { label: "WAF Rules", icon: <ShieldCheck size={20} />, path: "/waf" },
   { label: "Connectors", icon: <Plug size={20} />, path: "/connectors" },
   { label: "Settings", icon: <Settings size={20} />, path: "/settings" },
 ];

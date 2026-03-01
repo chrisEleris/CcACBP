@@ -85,3 +85,70 @@ export type MetricDataPoint = {
   time: string;
   value: number;
 };
+
+export type LogLevel = "INFO" | "WARN" | "ERROR" | "DEBUG" | "FATAL";
+
+export type LogEntry = {
+  id: string;
+  timestamp: string;
+  logGroup: string;
+  logStream: string;
+  level: LogLevel;
+  message: string;
+  requestId?: string;
+  source: string;
+};
+
+export type LogGroup = {
+  name: string;
+  retentionDays: number;
+  storedBytes: number;
+  streamCount: number;
+  lastEvent: string;
+};
+
+export type AiLogAnalysis = {
+  summary: string;
+  severity: "low" | "medium" | "high" | "critical";
+  rootCause: string;
+  recommendation: string;
+  relatedPatterns: string[];
+};
+
+export type WafRule = {
+  id: string;
+  name: string;
+  priority: number;
+  action: "ALLOW" | "BLOCK" | "COUNT";
+  type: "RATE_BASED" | "REGULAR" | "MANAGED";
+  ruleGroup: string;
+  matchesLast24h: number;
+  blockRate: number;
+  enabled: boolean;
+  description: string;
+};
+
+export type WafWebAcl = {
+  id: string;
+  name: string;
+  region: string;
+  rulesCount: number;
+  requestsSampled: number;
+  blockedRequests: number;
+  allowedRequests: number;
+};
+
+export type WafTrafficData = {
+  time: string;
+  allowed: number;
+  blocked: number;
+  counted: number;
+};
+
+export type WafTopThreat = {
+  source: string;
+  country: string;
+  requests: number;
+  blocked: number;
+  ruleTriggered: string;
+};
