@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Network,
   Plug,
+  Rocket,
   ScrollText,
   Server,
   Settings,
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { label: "Cost Explorer", icon: <DollarSign size={20} />, path: "/costs" },
   { label: "WAF Rules", icon: <ShieldCheck size={20} />, path: "/waf" },
   { label: "Jenkins CI/CD", icon: <Workflow size={20} />, path: "/jenkins" },
+  { label: "Deployments", icon: <Rocket size={20} />, path: "/deployments" },
   { label: "Connectors", icon: <Plug size={20} />, path: "/connectors" },
   { label: "Settings", icon: <Settings size={20} />, path: "/settings" },
 ];
