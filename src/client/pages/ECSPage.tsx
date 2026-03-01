@@ -177,16 +177,187 @@ function ClusterCard({
   );
 }
 
-function ServiceRow({
+function ServiceTasksDetail({
   service,
-  isExpanded,
-  onToggle,
-  tasks,
+  clusterName,
 }: {
   service: ECSService;
+  clusterName: string;
+}) {
+  const { data: tasksData, loading } = useFetch<ECSTask[]>(
+    `/api/ecs/tasks/${clusterName}/${service.name}`,
+  );
+  const tasks = tasksData ?? [];
+
+  return (
+    <div className="space-y-4">
+      {/* Scaling config */}
+      <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Auto-Scaling
+        </h4>
+        {service.scaling.enabled ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-4 text-xs">
+              <span className="text-gray-500">
+                Min: <span className="text-white">{service.scaling.minCapacity}</span>
+              </span>
+              <span className="text-gray-500">
+                Max: <span className="text-white">{service.scaling.maxCapacity}</span>
+              </span>
+              <span className="text-gray-500">
+                Current: <span className="text-white">{service.desiredCount}</span>
+              </span>
+            </div>
+            {service.scaling.policies.map((p) => (
+              <div
+                key={p.policyName}
+                className="flex flex-wrap items-center gap-2 text-xs text-gray-400"
+              >
+                <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-300">
+                  {p.metricType}
+                </span>
+                <span>Target: {p.targetValue}%</span>
+                <span className="text-gray-600">|</span>
+                <span>Up: {p.scaleUpCooldown}s</span>
+                <span>Down: {p.scaleDownCooldown}s</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-xs text-gray-500">
+            Disabled — fixed at {service.desiredCount} tasks
+          </span>
+        )}
+      </div>
+
+      {/* Deployments */}
+      {service.deployments.length > 0 && (
+        <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Deployments
+          </h4>
+          <div className="space-y-2">
+            {service.deployments.map((d) => (
+              <div key={d.id} className="flex flex-wrap items-center gap-3 text-xs">
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                    d.status === "PRIMARY"
+                      ? "bg-blue-500/10 text-blue-400"
+                      : d.status === "ACTIVE"
+                        ? "bg-gray-500/10 text-gray-400"
+                        : "bg-gray-700/50 text-gray-500"
+                  }`}
+                >
+                  {d.status}
+                </span>
+                <span className="font-mono text-gray-300">{d.taskDefinition}</span>
+                <span className="text-gray-500">
+                  {d.runningCount}/{d.desiredCount} running
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${
+                    d.rolloutState === "COMPLETED"
+                      ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
+                      : d.rolloutState === "IN_PROGRESS"
+                        ? "bg-blue-500/10 text-blue-400 ring-blue-500/20"
+                        : "bg-red-500/10 text-red-400 ring-red-500/20"
+                  }`}
+                >
+                  {d.rolloutState}
+                </span>
+                <span className="text-gray-600">{timeAgo(d.updatedAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tasks */}
+      {(loading || tasks.length > 0) && (
+        <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Tasks {loading ? "" : `(${tasks.length})`}
+          </h4>
+          {loading ? (
+            <p className="py-4 text-center text-xs text-gray-600">Loading tasks...</p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map((task) => (
+                <div
+                  key={task.taskId}
+                  className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-900/50 px-3 py-2 text-xs"
+                >
+                  <span className="font-mono text-gray-300">{task.taskId}</span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${taskStatusColor(task.status)}`}
+                  >
+                    <span className="h-1 w-1 rounded-full bg-current" />
+                    {task.status}
+                  </span>
+                  <span className="text-gray-500">
+                    <Cpu size={10} className="mr-0.5 inline" />
+                    {task.cpuUtilization}%
+                  </span>
+                  <span className="text-gray-500">
+                    <HardDrive size={10} className="mr-0.5 inline" />
+                    {task.memoryUtilization}%
+                  </span>
+                  <span className="hidden text-gray-600 sm:inline">{task.privateIp}</span>
+                  {task.stoppedReason && (
+                    <span className="basis-full text-[10px] text-red-400">
+                      {task.stoppedReason}
+                    </span>
+                  )}
+                  <div className="ml-auto flex gap-1">
+                    {task.status === "RUNNING" && (
+                      <button
+                        type="button"
+                        className="rounded p-1 text-red-400 hover:bg-red-500/10"
+                        aria-label="Stop task"
+                      >
+                        <Square size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Metadata */}
+      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+        <span>
+          Load Balancer:{" "}
+          {service.loadBalancerTarget ? (
+            <span className="text-gray-400">Attached</span>
+          ) : (
+            <span className="text-gray-600">None</span>
+          )}
+        </span>
+        <span>
+          Updated by: <span className="text-gray-400">{service.updatedBy}</span>
+        </span>
+        <span>
+          Created: <span className="text-gray-400">{timeAgo(service.createdAt)}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ServiceRow({
+  service,
+  clusterName,
+  isExpanded,
+  onToggle,
+}: {
+  service: ECSService;
+  clusterName: string;
   isExpanded: boolean;
   onToggle: () => void;
-  tasks: ECSTask[];
 }) {
   const countMismatch = service.desiredCount !== service.runningCount;
   const primaryDeployment = service.deployments.find((d) => d.status === "PRIMARY");
@@ -290,171 +461,11 @@ function ServiceRow({
       {isExpanded && (
         <tr className="border-b border-gray-700/30 bg-gray-900/40">
           <td colSpan={8} className="px-4 py-4">
-            <ServiceDetail service={service} tasks={tasks} />
+            <ServiceTasksDetail service={service} clusterName={clusterName} />
           </td>
         </tr>
       )}
     </Fragment>
-  );
-}
-
-function ServiceDetail({
-  service,
-  tasks,
-}: {
-  service: ECSService;
-  tasks: ECSTask[];
-}) {
-  return (
-    <div className="space-y-4">
-      {/* Scaling config */}
-      <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Auto-Scaling
-        </h4>
-        {service.scaling.enabled ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-4 text-xs">
-              <span className="text-gray-500">
-                Min: <span className="text-white">{service.scaling.minCapacity}</span>
-              </span>
-              <span className="text-gray-500">
-                Max: <span className="text-white">{service.scaling.maxCapacity}</span>
-              </span>
-              <span className="text-gray-500">
-                Current: <span className="text-white">{service.desiredCount}</span>
-              </span>
-            </div>
-            {service.scaling.policies.map((p) => (
-              <div
-                key={p.policyName}
-                className="flex flex-wrap items-center gap-2 text-xs text-gray-400"
-              >
-                <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-300">
-                  {p.metricType}
-                </span>
-                <span>Target: {p.targetValue}%</span>
-                <span className="text-gray-600">|</span>
-                <span>Up: {p.scaleUpCooldown}s</span>
-                <span>Down: {p.scaleDownCooldown}s</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <span className="text-xs text-gray-500">
-            Disabled — fixed at {service.desiredCount} tasks
-          </span>
-        )}
-      </div>
-
-      {/* Deployments */}
-      {service.deployments.length > 0 && (
-        <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Deployments
-          </h4>
-          <div className="space-y-2">
-            {service.deployments.map((d) => (
-              <div key={d.id} className="flex flex-wrap items-center gap-3 text-xs">
-                <span
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                    d.status === "PRIMARY"
-                      ? "bg-blue-500/10 text-blue-400"
-                      : d.status === "ACTIVE"
-                        ? "bg-gray-500/10 text-gray-400"
-                        : "bg-gray-700/50 text-gray-500"
-                  }`}
-                >
-                  {d.status}
-                </span>
-                <span className="font-mono text-gray-300">{d.taskDefinition}</span>
-                <span className="text-gray-500">
-                  {d.runningCount}/{d.desiredCount} running
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${
-                    d.rolloutState === "COMPLETED"
-                      ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
-                      : d.rolloutState === "IN_PROGRESS"
-                        ? "bg-blue-500/10 text-blue-400 ring-blue-500/20"
-                        : "bg-red-500/10 text-red-400 ring-red-500/20"
-                  }`}
-                >
-                  {d.rolloutState}
-                </span>
-                <span className="text-gray-600">{timeAgo(d.updatedAt)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tasks */}
-      {tasks.length > 0 && (
-        <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Tasks ({tasks.length})
-          </h4>
-          <div className="space-y-2">
-            {tasks.map((task) => (
-              <div
-                key={task.taskId}
-                className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-900/50 px-3 py-2 text-xs"
-              >
-                <span className="font-mono text-gray-300">{task.taskId}</span>
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${taskStatusColor(task.status)}`}
-                >
-                  <span className="h-1 w-1 rounded-full bg-current" />
-                  {task.status}
-                </span>
-                <span className="text-gray-500">
-                  <Cpu size={10} className="mr-0.5 inline" />
-                  {task.cpuUtilization}%
-                </span>
-                <span className="text-gray-500">
-                  <HardDrive size={10} className="mr-0.5 inline" />
-                  {task.memoryUtilization}%
-                </span>
-                <span className="hidden text-gray-600 sm:inline">{task.privateIp}</span>
-                {task.stoppedReason && (
-                  <span className="basis-full text-[10px] text-red-400">{task.stoppedReason}</span>
-                )}
-                <div className="ml-auto flex gap-1">
-                  {task.status === "RUNNING" && (
-                    <button
-                      type="button"
-                      className="rounded p-1 text-red-400 hover:bg-red-500/10"
-                      aria-label="Stop task"
-                    >
-                      <Square size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Metadata */}
-      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-        <span>
-          Load Balancer:{" "}
-          {service.loadBalancerTarget ? (
-            <span className="text-gray-400">Attached</span>
-          ) : (
-            <span className="text-gray-600">None</span>
-          )}
-        </span>
-        <span>
-          Updated by: <span className="text-gray-400">{service.updatedBy}</span>
-        </span>
-        <span>
-          Created: <span className="text-gray-400">{timeAgo(service.createdAt)}</span>
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -481,46 +492,45 @@ export function ECSPage() {
   const cluster = ecsClusters.find((c) => c.name === activeClusterName) ?? ecsClusters[0];
 
   return (
-    <ECSPageContent
+    <ECSClusterView
       ecsClusters={ecsClusters}
       selectedCluster={activeClusterName}
-      setSelectedCluster={setSelectedCluster}
       cluster={cluster}
       expandedService={expandedService}
-      setExpandedService={setExpandedService}
       taskFilter={taskFilter}
-      setTaskFilter={setTaskFilter}
+      onSelectCluster={(name) => {
+        setSelectedCluster(name);
+        setExpandedService(null);
+      }}
+      onToggleService={(name) => setExpandedService(expandedService === name ? null : name)}
+      onSetTaskFilter={setTaskFilter}
     />
   );
 }
 
-function ECSPageContent({
+function ECSClusterView({
   ecsClusters,
   selectedCluster,
-  setSelectedCluster,
   cluster,
   expandedService,
-  setExpandedService,
   taskFilter,
-  setTaskFilter,
+  onSelectCluster,
+  onToggleService,
+  onSetTaskFilter,
 }: {
   ecsClusters: ECSCluster[];
   selectedCluster: string;
-  setSelectedCluster: (name: string) => void;
   cluster: ECSCluster;
   expandedService: string | null;
-  setExpandedService: (name: string | null) => void;
   taskFilter: "all" | ECSTaskStatus;
-  setTaskFilter: (filter: "all" | ECSTaskStatus) => void;
+  onSelectCluster: (name: string) => void;
+  onToggleService: (name: string) => void;
+  onSetTaskFilter: (filter: "all" | ECSTaskStatus) => void;
 }) {
   const { data: ecsServicesData } = useFetch<ECSService[]>(`/api/ecs/services/${selectedCluster}`);
-  const { data: ecsTasksData } = useFetch<ECSTask[]>(
-    `/api/ecs/tasks/${selectedCluster}/${selectedCluster}`,
-  );
   const { data: ecsEventsData } = useFetch<ECSEvent[]>(`/api/ecs/events/${selectedCluster}`);
 
-  const services = (ecsServicesData ?? []).filter((s) => s.clusterName === selectedCluster);
-  const clusterTasks = (ecsTasksData ?? []).filter((t) => t.clusterName === selectedCluster);
+  const services = ecsServicesData ?? [];
   const events = ecsEventsData ?? [];
 
   const totalRunning = services.reduce((sum, s) => sum + s.runningCount, 0);
@@ -528,14 +538,6 @@ function ECSPageContent({
   const unhealthyServices = services.filter(
     (s) => s.health === "UNHEALTHY" || s.health === "SCALING",
   ).length;
-
-  const filteredTasks =
-    taskFilter === "all" ? clusterTasks : clusterTasks.filter((t) => t.status === taskFilter);
-
-  const taskStatusCounts: Record<string, number> = {};
-  for (const t of clusterTasks) {
-    taskStatusCounts[t.status] = (taskStatusCounts[t.status] ?? 0) + 1;
-  }
 
   return (
     <div className="space-y-6">
@@ -546,7 +548,7 @@ function ECSPageContent({
             key={c.name}
             cluster={c}
             isSelected={c.name === selectedCluster}
-            onSelect={() => setSelectedCluster(c.name)}
+            onSelect={() => onSelectCluster(c.name)}
           />
         ))}
       </div>
@@ -641,11 +643,9 @@ function ECSPageContent({
                 <ServiceRow
                   key={svc.name}
                   service={svc}
+                  clusterName={selectedCluster}
                   isExpanded={expandedService === svc.name}
-                  onToggle={() =>
-                    setExpandedService(expandedService === svc.name ? null : svc.name)
-                  }
-                  tasks={filteredTasks.filter((t) => t.serviceName === svc.name)}
+                  onToggle={() => onToggleService(svc.name)}
                 />
               ))}
             </tbody>
@@ -660,12 +660,12 @@ function ECSPageContent({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
               <Box size={16} className="text-emerald-400" />
-              Tasks ({clusterTasks.length})
+              Task Status Filter
             </h3>
             <div className="flex flex-wrap gap-1">
               <button
                 type="button"
-                onClick={() => setTaskFilter("all")}
+                onClick={() => onSetTaskFilter("all")}
                 className={`rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
                   taskFilter === "all"
                     ? "bg-gray-600 text-white"
@@ -678,45 +678,21 @@ function ECSPageContent({
                 <button
                   key={status}
                   type="button"
-                  onClick={() => setTaskFilter(status)}
+                  onClick={() => onSetTaskFilter(status)}
                   className={`rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
                     taskFilter === status
                       ? "bg-gray-600 text-white"
                       : "text-gray-500 hover:text-gray-300"
                   }`}
                 >
-                  {status} {taskStatusCounts[status] ? `(${taskStatusCounts[status]})` : ""}
+                  {status}
                 </button>
               ))}
             </div>
           </div>
-          <div className="space-y-2">
-            {filteredTasks.length === 0 ? (
-              <p className="py-8 text-center text-xs text-gray-600">No tasks match filter.</p>
-            ) : (
-              filteredTasks.map((task) => (
-                <div
-                  key={task.taskId}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-700/20 bg-gray-900/30 px-3 py-2 text-xs"
-                >
-                  <span className="font-mono text-gray-300">{task.taskId}</span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${taskStatusColor(task.status)}`}
-                  >
-                    <span className="h-1 w-1 rounded-full bg-current" />
-                    {task.status}
-                  </span>
-                  <span className="text-gray-500">{task.serviceName}</span>
-                  {task.status === "RUNNING" && (
-                    <span className="text-gray-600">
-                      CPU {task.cpuUtilization}% · Mem {task.memoryUtilization}%
-                    </span>
-                  )}
-                  <span className="ml-auto text-gray-600">{timeAgo(task.startedAt)}</span>
-                </div>
-              ))
-            )}
-          </div>
+          <p className="py-4 text-center text-xs text-gray-600">
+            Expand a service row above to view its tasks.
+          </p>
         </div>
 
         {/* Recent events */}
@@ -726,34 +702,38 @@ function ECSPageContent({
             Recent Events
           </h3>
           <div className="space-y-3">
-            {events.map((evt) => (
-              <div key={evt.id} className="flex gap-3 text-xs">
-                <div className="flex shrink-0 flex-col items-center">
-                  <span className={`mt-0.5 ${eventTypeColor(evt.type)}`}>
-                    {evt.type === "ERROR" ? (
-                      <AlertTriangle size={14} />
-                    ) : evt.type === "DEPLOYMENT" ? (
-                      <Zap size={14} />
-                    ) : evt.type === "SCALING" ? (
-                      <ArrowDownUp size={14} />
-                    ) : (
-                      <Clock size={14} />
-                    )}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${eventTypeBadgeColor(evt.type)}`}
-                    >
-                      {evt.type}
+            {events.length === 0 ? (
+              <p className="py-4 text-center text-xs text-gray-600">No recent events.</p>
+            ) : (
+              events.map((evt) => (
+                <div key={evt.id} className="flex gap-3 text-xs">
+                  <div className="flex shrink-0 flex-col items-center">
+                    <span className={`mt-0.5 ${eventTypeColor(evt.type)}`}>
+                      {evt.type === "ERROR" ? (
+                        <AlertTriangle size={14} />
+                      ) : evt.type === "DEPLOYMENT" ? (
+                        <Zap size={14} />
+                      ) : evt.type === "SCALING" ? (
+                        <ArrowDownUp size={14} />
+                      ) : (
+                        <Clock size={14} />
+                      )}
                     </span>
-                    <span className="text-gray-600">{timeAgo(evt.timestamp)}</span>
                   </div>
-                  <p className="text-gray-400">{evt.message}</p>
+                  <div className="min-w-0">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${eventTypeBadgeColor(evt.type)}`}
+                      >
+                        {evt.type}
+                      </span>
+                      <span className="text-gray-600">{timeAgo(evt.timestamp)}</span>
+                    </div>
+                    <p className="text-gray-400">{evt.message}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
