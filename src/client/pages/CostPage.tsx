@@ -7,7 +7,6 @@ import {
   Legend,
   Pie,
   PieChart,
-  type PieLabelRenderProps,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -68,8 +67,8 @@ export function CostPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5 lg:col-span-2">
           <h3 className="mb-4 text-sm font-medium text-gray-400">Cost History (6 months)</h3>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={costHistory}>
@@ -85,7 +84,7 @@ export function CostPage() {
                 }}
                 formatter={(value: number | undefined) => [`$${value ?? 0}`, undefined]}
               />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: "11px" }} />
               <Bar dataKey="ec2" name="EC2" fill="#3b82f6" radius={[2, 2, 0, 0]} />
               <Bar dataKey="rds" name="RDS" fill="#f59e0b" radius={[2, 2, 0, 0]} />
               <Bar dataKey="s3" name="S3" fill="#10b981" radius={[2, 2, 0, 0]} />
@@ -95,7 +94,7 @@ export function CostPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-5">
+        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4 md:p-5">
           <h3 className="mb-4 text-sm font-medium text-gray-400">Current Month Breakdown</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
@@ -106,9 +105,6 @@ export function CostPage() {
                 innerRadius={55}
                 outerRadius={85}
                 dataKey="value"
-                label={({ name, percent }: PieLabelRenderProps) =>
-                  `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
-                }
                 labelLine={false}
               >
                 {breakdownData.map((entry) => (

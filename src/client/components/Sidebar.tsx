@@ -1,5 +1,7 @@
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   Cloud,
   Database,
   DollarSign,
@@ -7,9 +9,11 @@ import {
   LayoutDashboard,
   Network,
   Plug,
+  ScrollText,
   Server,
   Settings,
   Shield,
+  ShieldCheck,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
@@ -25,10 +29,12 @@ const navItems: NavItem[] = [
   { label: "EC2 Instances", icon: <Server size={20} />, path: "/ec2" },
   { label: "S3 Buckets", icon: <Database size={20} />, path: "/s3" },
   { label: "CloudWatch", icon: <Activity size={20} />, path: "/cloudwatch" },
+  { label: "Log Explorer", icon: <ScrollText size={20} />, path: "/logs" },
   { label: "IAM", icon: <Shield size={20} />, path: "/iam" },
   { label: "VPC & Network", icon: <Network size={20} />, path: "/vpc" },
   { label: "Lambda", icon: <FileText size={20} />, path: "/lambda" },
   { label: "Cost Explorer", icon: <DollarSign size={20} />, path: "/costs" },
+  { label: "WAF Rules", icon: <ShieldCheck size={20} />, path: "/waf" },
   { label: "Connectors", icon: <Plug size={20} />, path: "/connectors" },
   { label: "Settings", icon: <Settings size={20} />, path: "/settings" },
 ];
@@ -36,14 +42,17 @@ const navItems: NavItem[] = [
 type SidebarProps = {
   currentPath: string;
   onNavigate: (path: string) => void;
+  mobileOpen: boolean;
 };
 
-export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
+export function Sidebar({ currentPath, onNavigate, mobileOpen }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
-      className={`bg-sidebar flex h-screen flex-col text-white transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
+      className={`bg-sidebar fixed inset-y-0 left-0 z-30 flex h-screen w-64 flex-col text-white transition-all duration-300 md:relative md:z-auto md:translate-x-0 ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      } ${collapsed ? "md:w-16" : "md:w-64"}`}
     >
       <div className="flex items-center gap-3 border-b border-white/10 p-4">
         <Cloud className="text-aws-orange shrink-0" size={28} />
@@ -79,9 +88,11 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="hover:bg-sidebar-hover border-t border-white/10 p-4 text-xs text-gray-400 transition-colors"
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-expanded={!collapsed}
+        className="hover:bg-sidebar-hover hidden items-center justify-center border-t border-white/10 p-4 text-gray-400 transition-colors md:flex"
       >
-        {collapsed ? ">>" : "<< Collapse"}
+        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
     </aside>
   );

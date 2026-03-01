@@ -1,16 +1,27 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Menu, Search, User } from "lucide-react";
 
 type HeaderProps = {
   title: string;
+  onMenuClick: () => void;
 };
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, onMenuClick }: HeaderProps) {
   return (
-    <header className="bg-aws-dark flex items-center justify-between border-b border-white/10 px-6 py-3">
-      <h1 className="text-xl font-semibold text-white">{title}</h1>
+    <header className="bg-aws-dark flex items-center justify-between border-b border-white/10 px-4 py-3 md:px-6">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          className="rounded-lg p-2 text-gray-400 hover:bg-white/10 md:hidden"
+          aria-label="Open navigation"
+        >
+          <Menu size={20} />
+        </button>
+        <h1 className="text-lg font-semibold text-white md:text-xl">{title}</h1>
+      </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative">
+      <div className="flex items-center gap-3">
+        <div className="relative hidden md:block">
           <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
@@ -27,9 +38,9 @@ export function Header({ title }: HeaderProps) {
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
         </button>
 
-        <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1.5 md:px-3">
           <User size={18} className="text-gray-300" />
-          <span className="text-sm text-gray-200">Admin</span>
+          <span className="hidden text-sm text-gray-200 sm:inline">Admin</span>
         </div>
       </div>
     </header>
