@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Cloud,
+  Container,
   Database,
   DollarSign,
   FileText,
@@ -28,6 +29,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/" },
   { label: "EC2 Instances", icon: <Server size={20} />, path: "/ec2" },
+  { label: "ECS Clusters", icon: <Container size={20} />, path: "/ecs" },
   { label: "S3 Buckets", icon: <Database size={20} />, path: "/s3" },
   { label: "CloudWatch", icon: <Activity size={20} />, path: "/cloudwatch" },
   { label: "Log Explorer", icon: <ScrollText size={20} />, path: "/logs" },

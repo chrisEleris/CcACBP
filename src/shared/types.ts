@@ -226,3 +226,111 @@ export type JenkinsServerInfo = {
   executorsTotal: number;
   queueLength: number;
 };
+
+// ── ECS Types ──────────────────────────────────────────────
+
+export type ECSTaskStatus = "PROVISIONING" | "PENDING" | "RUNNING" | "STOPPING" | "STOPPED";
+
+export type ECSServiceHealth = "HEALTHY" | "ROLLING" | "UNHEALTHY" | "SCALING";
+
+export type ECSDeploymentStatus = "PRIMARY" | "ACTIVE" | "INACTIVE";
+
+export type ECSRolloutState = "IN_PROGRESS" | "COMPLETED" | "FAILED";
+
+export type ECSCluster = {
+  name: string;
+  arn: string;
+  status: "ACTIVE" | "INACTIVE";
+  registeredInstances: number;
+  runningTasks: number;
+  pendingTasks: number;
+  activeServices: number;
+  cpuReservation: number;
+  memoryReservation: number;
+  cpuUtilization: number;
+  memoryUtilization: number;
+};
+
+export type ECSContainer = {
+  name: string;
+  image: string;
+  cpu: number;
+  memory: number;
+  status: "RUNNING" | "STOPPED" | "PENDING";
+  healthStatus: "HEALTHY" | "UNHEALTHY" | "UNKNOWN";
+  lastStartedAt: string;
+};
+
+export type ECSTask = {
+  taskId: string;
+  taskDefinition: string;
+  serviceName: string;
+  clusterName: string;
+  status: ECSTaskStatus;
+  healthStatus: "HEALTHY" | "UNHEALTHY" | "UNKNOWN";
+  cpu: number;
+  memory: number;
+  cpuUtilization: number;
+  memoryUtilization: number;
+  containers: ECSContainer[];
+  startedAt: string;
+  stoppedAt: string | null;
+  stoppedReason: string | null;
+  launchType: "FARGATE" | "EC2";
+  privateIp: string;
+};
+
+export type ECSDeployment = {
+  id: string;
+  status: ECSDeploymentStatus;
+  rolloutState: ECSRolloutState;
+  taskDefinition: string;
+  desiredCount: number;
+  runningCount: number;
+  pendingCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ECSScalingPolicy = {
+  policyName: string;
+  metricType: "CPU" | "Memory" | "ALBRequestCount";
+  targetValue: number;
+  scaleUpCooldown: number;
+  scaleDownCooldown: number;
+};
+
+export type ECSService = {
+  name: string;
+  arn: string;
+  clusterName: string;
+  status: "ACTIVE" | "DRAINING" | "INACTIVE";
+  health: ECSServiceHealth;
+  taskDefinition: string;
+  desiredCount: number;
+  runningCount: number;
+  pendingCount: number;
+  launchType: "FARGATE" | "EC2";
+  deployments: ECSDeployment[];
+  loadBalancerTarget: string | null;
+  scaling: {
+    enabled: boolean;
+    minCapacity: number;
+    maxCapacity: number;
+    policies: ECSScalingPolicy[];
+  };
+  cpuUtilization: number;
+  memoryUtilization: number;
+  createdAt: string;
+  lastDeployment: string;
+  updatedBy: string;
+};
+
+export type ECSEvent = {
+  id: string;
+  timestamp: string;
+  serviceName: string;
+  clusterName: string;
+  message: string;
+  type: "DEPLOYMENT" | "SCALING" | "TASK" | "ERROR";
+};
