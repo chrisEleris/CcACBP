@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
 export default defineConfig({
-  base: "/CcACBP/",
+  base: process.env.VITE_BASE_PATH ?? "/CcACBP/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

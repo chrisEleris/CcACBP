@@ -854,18 +854,58 @@ function calculateTotal(basePrice: number, taxRate: number): number {
 
 ### 13.1 Branch Strategy
 
+```
+main  ← production (auto-deploys to GitHub Pages root)
+ │
+dev   ← integration / preview (auto-deploys to /dev/ path)
+ │
+ └── feature/issue-{n}-{desc}  ← working branches
+```
+
+**Live URLs (auto-deployed on push):**
+
+| Branch | URL | Purpose |
+|--------|-----|---------|
+| `main` | `https://chrisEleris.github.io/CcACBP/` | Production |
+| `dev` | `https://chrisEleris.github.io/CcACBP/dev/` | Preview / QA |
+
+### 13.2 Feature Development Workflow
+
 **MANDATORY: Create feature branch before implementing ANY issue.**
 
 ```bash
-git checkout develop && git pull
+# 1. Start from latest dev
+git checkout dev && git pull origin dev
+
+# 2. Create feature branch
 git checkout -b feature/issue-{number}-{description}
-# ... implement ...
+
+# 3. Implement (follow TDD cycle)
+# ... write tests, then code ...
+
+# 4. Run quality gates
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
+
+# 5. Commit and push
 git commit -m "feat(scope): description"
 git push origin feature/issue-{number}-{description}
-gh pr create --base develop
+
+# 6. Create PR targeting dev
+gh pr create --base dev
 ```
 
-### 13.2 Branch Naming
+### 13.3 Promoting to Production
+
+```bash
+# Only after dev is tested and stable:
+# 1. Create PR: dev → main
+gh pr create --base main --head dev --title "Release: <summary>"
+
+# 2. Merge after review
+# 3. GitHub Pages auto-deploys both branches
+```
+
+### 13.4 Branch Naming
 
 | Type | Pattern | Example |
 |------|---------|---------|
@@ -874,15 +914,15 @@ gh pr create --base develop
 | Hotfix | `hotfix/{desc}` | `hotfix/security-patch` |
 | Epic | `feature/epic-{n}-{name}` | `feature/epic-1-user-management` |
 
-### 13.3 Protected Branches
+### 13.5 Protected Branches
 
-| Branch | Direct Commits | Status |
-|--------|----------------|--------|
-| `main` | **NEVER** | Production |
-| `develop` | **NEVER** | Integration |
-| `feature/*` | YES | Working branch |
+| Branch | Direct Commits | PR Target | Status |
+|--------|----------------|-----------|--------|
+| `main` | **NEVER** | From `dev` only | Production |
+| `dev` | **NEVER** | From `feature/*` | Integration / Preview |
+| `feature/*` | YES | Into `dev` | Working branch |
 
-### 13.4 Commit Messages (Conventional Commits)
+### 13.6 Commit Messages (Conventional Commits)
 
 ```bash
 <type>(<scope>): <subject>
@@ -893,7 +933,7 @@ git commit -m "feat(auth): add JWT refresh token"
 git commit -m "fix(api): handle null response"
 ```
 
-### 13.5 Pre-Commit Quality Gates
+### 13.7 Pre-Commit Quality Gates
 
 ```bash
 pnpm typecheck   # Type checking
@@ -901,6 +941,18 @@ pnpm lint        # Linting
 pnpm test        # Tests
 pnpm build       # Build verification
 ```
+
+### 13.8 GitHub Pages Deployment
+
+Deployments are fully automated via GitHub Actions (`.github/workflows/deploy.yml`).
+
+| Trigger | What happens |
+|---------|-------------|
+| Push to `main` | Rebuilds **both** main + dev and deploys combined site |
+| Push to `dev` | Rebuilds **both** main + dev and deploys combined site |
+| Manual dispatch | Same as above (trigger from Actions tab) |
+
+**Setup (one-time):** Go to repo **Settings > Pages > Source** and select **GitHub Actions**.
 
 ---
 

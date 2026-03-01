@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -12,14 +12,12 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -27,15 +25,49 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      # ----- Build main (production) -----
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-src
 
-      - run: pnpm build
+      - name: Install main dependencies
+        working-directory: main-src
+        run: pnpm install --frozen-lockfile
+
+      - name: Build main
+        working-directory: main-src
+        run: pnpm build
+
+      # ----- Build dev (preview) -----
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev-src
+
+      - name: Install dev dependencies
+        working-directory: dev-src
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dev
+        working-directory: dev-src
+        env:
+          VITE_BASE_PATH: /CcACBP/dev/
+        run: pnpm build
+
+      # ----- Combine into single site -----
+      - name: Assemble site
+        run: |
+          mkdir -p _site/dev
+          cp -r main-src/dist/* _site/
+          cp -r dev-src/dist/* _site/dev/
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: _site
 
   deploy:
     environment:
