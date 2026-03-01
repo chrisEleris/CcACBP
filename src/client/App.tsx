@@ -7,6 +7,7 @@ import { ConnectorsPage } from "./pages/ConnectorsPage";
 import { CostPage } from "./pages/CostPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EC2Page } from "./pages/EC2Page";
+import { ECSPage } from "./pages/ECSPage";
 import { IAMPage } from "./pages/IAMPage";
 import { JenkinsPage } from "./pages/JenkinsPage";
 import { LambdaPage } from "./pages/LambdaPage";
@@ -19,6 +20,7 @@ import { WafPage } from "./pages/WafPage";
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
   "/ec2": "EC2 Instances",
+  "/ecs": "ECS Clusters",
   "/s3": "S3 Buckets",
   "/cloudwatch": "CloudWatch",
   "/iam": "IAM Management",
@@ -42,6 +44,8 @@ function App() {
         return <DashboardPage />;
       case "/ec2":
         return <EC2Page />;
+      case "/ecs":
+        return <ECSPage />;
       case "/s3":
         return <S3Page />;
       case "/cloudwatch":
