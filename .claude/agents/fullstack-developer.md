@@ -55,7 +55,7 @@ This ensures you use correct:
 
 ### Backend Frameworks
 
-#### {{BACKEND_FRAMEWORK}} Patterns
+#### Hono Patterns
 
 **For Hono/Elysia/Express/Fastify:**
 ```typescript

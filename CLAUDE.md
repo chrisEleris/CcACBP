@@ -1,17 +1,17 @@
-# {{PROJECT_NAME}} Coding Standards & Best Practices
+# CcACBP Coding Standards & Best Practices
 
-**Version:** {{VERSION}}
-**Last Updated:** {{DATE}}
-**Architecture:** {{ARCHITECTURE_TYPE}}
+**Version:** 1.0.0
+**Last Updated:** 2026-03-01
+**Architecture:** Full-Stack Web Application (Monorepo)
 
 ---
 
 ## Quick Start
 
-1. Copy this file to your project root as `CLAUDE.md`
-2. Replace all `{{PLACEHOLDER}}` values with your project specifics
-3. Delete language/framework sections that don't apply to your stack
-4. Add project-specific patterns as needed
+1. Run `pnpm install` to install dependencies
+2. Run `pnpm dev` to start the development server
+3. Run `pnpm test` to run tests
+4. Run `pnpm lint` to check code quality
 
 ---
 
@@ -21,13 +21,13 @@
 
 | Setting | Value | Options |
 |---------|-------|---------|
-| **Language** | `{{LANGUAGE}}` | TypeScript, JavaScript, Python, Go, Rust |
-| **Package Manager** | `{{PACKAGE_MANAGER}}` | pnpm, bun, npm, yarn, pip, poetry, cargo, go mod |
-| **Backend Framework** | `{{BACKEND_FRAMEWORK}}` | Hono, Elysia, Express, Fastify, FastAPI, Gin, Axum |
-| **Frontend Framework** | `{{FRONTEND_FRAMEWORK}}` | React, Vue, Svelte, Solid, None |
-| **Database/ORM** | `{{DATABASE_ORM}}` | Drizzle, Prisma, SQLAlchemy, GORM, Diesel |
-| **Testing Framework** | `{{TESTING_FRAMEWORK}}` | Vitest, Jest, pytest, go test, cargo test |
-| **Linter/Formatter** | `{{LINTER_FORMATTER}}` | Biome, ESLint+Prettier, Ruff, golangci-lint, rustfmt |
+| **Language** | `TypeScript` | TypeScript, JavaScript, Python, Go, Rust |
+| **Package Manager** | `pnpm` | pnpm, bun, npm, yarn, pip, poetry, cargo, go mod |
+| **Backend Framework** | `Hono` | Hono, Elysia, Express, Fastify, FastAPI, Gin, Axum |
+| **Frontend Framework** | `React` | React, Vue, Svelte, Solid, None |
+| **Database/ORM** | `Drizzle` | Drizzle, Prisma, SQLAlchemy, GORM, Diesel |
+| **Testing Framework** | `Vitest` | Vitest, Jest, pytest, go test, cargo test |
+| **Linter/Formatter** | `Biome` | Biome, ESLint+Prettier, Ruff, golangci-lint, rustfmt |
 
 ---
 
@@ -896,10 +896,10 @@ git commit -m "fix(api): handle null response"
 ### 13.5 Pre-Commit Quality Gates
 
 ```bash
-{{PACKAGE_MANAGER}} typecheck   # Type checking
-{{PACKAGE_MANAGER}} lint        # Linting
-{{PACKAGE_MANAGER}} test        # Tests
-{{PACKAGE_MANAGER}} build       # Build verification
+pnpm typecheck   # Type checking
+pnpm lint        # Linting
+pnpm test        # Tests
+pnpm build       # Build verification
 ```
 
 ---
@@ -1597,7 +1597,7 @@ If a breaking change is ABSOLUTELY necessary:
 **All Claude Code files MUST be in project root:**
 
 ```
-{{PROJECT_ROOT}}/.claude/
+.claude/
 ├── plans/                  # Implementation plans
 ├── docs/                   # Project documentation
 ├── agents/                 # Agent configurations
@@ -1608,7 +1608,7 @@ If a breaking change is ABSOLUTELY necessary:
 
 | Location | Status |
 |----------|--------|
-| `{{PROJECT_ROOT}}/.claude/` | **REQUIRED** |
+| `.claude/` | **REQUIRED** |
 | `~/.claude/` (user home) | **PROHIBITED** |
 
 ---
@@ -1636,4 +1636,4 @@ If a breaking change is ABSOLUTELY necessary:
 
 **End of Document**
 
-*This template provides universal coding standards. Replace `{{PLACEHOLDERS}}` and remove sections that don't apply to your stack.*
+*These are the coding standards for the CcACBP project.*
