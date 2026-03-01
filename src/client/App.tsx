@@ -8,6 +8,7 @@ import { CostPage } from "./pages/CostPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EC2Page } from "./pages/EC2Page";
 import { IAMPage } from "./pages/IAMPage";
+import { JenkinsPage } from "./pages/JenkinsPage";
 import { LambdaPage } from "./pages/LambdaPage";
 import { LogExplorerPage } from "./pages/LogExplorerPage";
 import { S3Page } from "./pages/S3Page";
@@ -26,6 +27,7 @@ const pageTitles: Record<string, string> = {
   "/costs": "Cost Explorer",
   "/logs": "Log Explorer",
   "/waf": "WAF Rules",
+  "/jenkins": "Jenkins CI/CD",
   "/connectors": "Connectors",
   "/settings": "Settings",
 };
@@ -56,6 +58,8 @@ function App() {
         return <LogExplorerPage />;
       case "/waf":
         return <WafPage />;
+      case "/jenkins":
+        return <JenkinsPage />;
       case "/connectors":
         return <ConnectorsPage />;
       case "/settings":
