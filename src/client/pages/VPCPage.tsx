@@ -1,9 +1,19 @@
+import type { VPC } from "@shared/types";
 import { Network } from "lucide-react";
 import { DataTable } from "../components/DataTable";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { vpcs } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 export function VPCPage() {
+  const { data: vpcs, loading, error, refetch } = useFetch<VPC[]>("/api/aws/vpc/list");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!vpcs || vpcs.length === 0) return <EmptyState message="No VPCs found" />;
+
   const totalSubnets = vpcs.reduce((sum, v) => sum + v.subnets, 0);
 
   return (

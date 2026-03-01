@@ -1,3 +1,4 @@
+import type { CloudWatchAlarm, CostData, EC2Instance, IAMUser } from "@shared/types";
 import {
   Activity,
   AlertTriangle,
@@ -22,53 +23,63 @@ import {
 } from "recharts";
 import { StatCard } from "../components/StatCard";
 import { StatusBadge } from "../components/StatusBadge";
-import {
-  cloudWatchAlarms,
-  costHistory,
-  cpuMetrics,
-  ec2Instances,
-  iamUsers,
-} from "../lib/mock-data";
-
-const alarmsByState = {
-  ok: cloudWatchAlarms.filter((a) => a.state === "OK").length,
-  alarm: cloudWatchAlarms.filter((a) => a.state === "ALARM").length,
-  insufficient: cloudWatchAlarms.filter((a) => a.state === "INSUFFICIENT_DATA").length,
-};
-
-const pieData = [
-  { name: "OK", value: alarmsByState.ok, color: "#10b981" },
-  { name: "Alarm", value: alarmsByState.alarm, color: "#ef4444" },
-  { name: "No Data", value: alarmsByState.insufficient, color: "#6b7280" },
-];
-
-const latestCost = costHistory[costHistory.length - 1];
-const totalMonthlyCost = latestCost
-  ? latestCost.ec2 + latestCost.s3 + latestCost.rds + latestCost.lambda + latestCost.other
-  : 0;
-
-const costSubtitle = latestCost ? `${latestCost.month} ${new Date().getFullYear()}` : "";
-const previousCost = costHistory[costHistory.length - 2];
-const previousTotal = previousCost
-  ? previousCost.ec2 + previousCost.s3 + previousCost.rds + previousCost.lambda + previousCost.other
-  : 0;
-const costChangePercent =
-  previousTotal > 0 ? (((totalMonthlyCost - previousTotal) / previousTotal) * 100).toFixed(1) : "0";
-const costTrendPositive = Number(costChangePercent) <= 0;
-
-const iamUserCount = iamUsers.length;
-const iamMfaCount = iamUsers.filter((u) => u.mfaEnabled).length;
+import { cpuMetrics } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 export function DashboardPage() {
-  const runningInstances = ec2Instances.filter((i) => i.state === "running").length;
-  const activeAlarms = cloudWatchAlarms.filter((a) => a.state === "ALARM");
+  const { data: ec2Instances } = useFetch<EC2Instance[]>("/api/aws/ec2/instances");
+  const { data: cloudWatchAlarms } = useFetch<CloudWatchAlarm[]>("/api/aws/cloudwatch/alarms");
+  const { data: iamUsers } = useFetch<IAMUser[]>("/api/aws/iam/users");
+  const { data: costHistory } = useFetch<CostData[]>("/api/aws/costs/summary");
+
+  const instances = ec2Instances ?? [];
+  const alarms = cloudWatchAlarms ?? [];
+  const users = iamUsers ?? [];
+  const costs = costHistory ?? [];
+
+  const runningInstances = instances.filter((i) => i.state === "running").length;
+  const activeAlarms = alarms.filter((a) => a.state === "ALARM");
+
+  const alarmsByState = {
+    ok: alarms.filter((a) => a.state === "OK").length,
+    alarm: alarms.filter((a) => a.state === "ALARM").length,
+    insufficient: alarms.filter((a) => a.state === "INSUFFICIENT_DATA").length,
+  };
+
+  const pieData = [
+    { name: "OK", value: alarmsByState.ok, color: "#10b981" },
+    { name: "Alarm", value: alarmsByState.alarm, color: "#ef4444" },
+    { name: "No Data", value: alarmsByState.insufficient, color: "#6b7280" },
+  ];
+
+  const latestCost = costs[costs.length - 1];
+  const totalMonthlyCost = latestCost
+    ? latestCost.ec2 + latestCost.s3 + latestCost.rds + latestCost.lambda + latestCost.other
+    : 0;
+  const costSubtitle = latestCost ? `${latestCost.month} ${new Date().getFullYear()}` : "";
+  const previousCost = costs[costs.length - 2];
+  const previousTotal = previousCost
+    ? previousCost.ec2 +
+      previousCost.s3 +
+      previousCost.rds +
+      previousCost.lambda +
+      previousCost.other
+    : 0;
+  const costChangePercent =
+    previousTotal > 0
+      ? (((totalMonthlyCost - previousTotal) / previousTotal) * 100).toFixed(1)
+      : "0";
+  const costTrendPositive = Number(costChangePercent) <= 0;
+
+  const iamUserCount = users.length;
+  const iamMfaCount = users.filter((u) => u.mfaEnabled).length;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           title="EC2 Instances"
-          value={`${runningInstances}/${ec2Instances.length}`}
+          value={`${runningInstances}/${instances.length}`}
           subtitle="running"
           icon={<Server size={22} />}
           color="blue"
@@ -76,7 +87,7 @@ export function DashboardPage() {
         <StatCard
           title="Active Alarms"
           value={activeAlarms.length}
-          subtitle={`of ${cloudWatchAlarms.length} total`}
+          subtitle={`of ${alarms.length} total`}
           icon={<AlertTriangle size={22} />}
           color={activeAlarms.length > 0 ? "red" : "green"}
         />

@@ -79,12 +79,13 @@ module "ecr" {
 module "alb" {
   source = "../../modules/alb"
 
-  project_name      = var.project_name
-  environment       = "prod"
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_ids = module.vpc.public_subnet_ids
-  container_port    = 3000
-  health_check_path = "/api/health"
+  project_name        = var.project_name
+  environment         = "prod"
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  container_port      = 3000
+  health_check_path   = "/api/health"
+  allowed_cidr_blocks = ["0.0.0.0/0"] # Tighten to known CIDRs before going live
 }
 
 module "ecs" {
@@ -116,6 +117,8 @@ module "ecs" {
   }
 
   log_retention_days = 30
+
+  assign_public_ip = false # Tasks live in private subnets behind NAT
 
   # Enable auto-scaling in prod
   enable_autoscaling = true

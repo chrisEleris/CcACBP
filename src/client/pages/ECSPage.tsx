@@ -28,8 +28,11 @@ import {
   Zap,
 } from "lucide-react";
 import { Fragment, useState } from "react";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { ecsClusters, ecsEvents, ecsServices, ecsTasks } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -458,14 +461,67 @@ function ServiceDetail({
 // ── Main Component ────────────────────────────────────────
 
 export function ECSPage() {
-  const [selectedCluster, setSelectedCluster] = useState<string>(ecsClusters[0].name);
+  const {
+    data: ecsClusters,
+    loading: clustersLoading,
+    error: clustersError,
+    refetch: refetchClusters,
+  } = useFetch<ECSCluster[]>("/api/ecs/clusters");
+
+  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [expandedService, setExpandedService] = useState<string | null>(null);
   const [taskFilter, setTaskFilter] = useState<"all" | ECSTaskStatus>("all");
 
-  const cluster = ecsClusters.find((c) => c.name === selectedCluster) ?? ecsClusters[0];
-  const services = ecsServices.filter((s) => s.clusterName === selectedCluster);
-  const clusterTasks = ecsTasks.filter((t) => t.clusterName === selectedCluster);
-  const events = ecsEvents.filter((e) => e.clusterName === selectedCluster);
+  if (clustersLoading) return <LoadingState />;
+  if (clustersError) return <ErrorState message={clustersError} onRetry={refetchClusters} />;
+  if (!ecsClusters || ecsClusters.length === 0)
+    return <EmptyState message="No ECS clusters found" />;
+
+  const activeClusterName = selectedCluster ?? ecsClusters[0].name;
+  const cluster = ecsClusters.find((c) => c.name === activeClusterName) ?? ecsClusters[0];
+
+  return (
+    <ECSPageContent
+      ecsClusters={ecsClusters}
+      selectedCluster={activeClusterName}
+      setSelectedCluster={setSelectedCluster}
+      cluster={cluster}
+      expandedService={expandedService}
+      setExpandedService={setExpandedService}
+      taskFilter={taskFilter}
+      setTaskFilter={setTaskFilter}
+    />
+  );
+}
+
+function ECSPageContent({
+  ecsClusters,
+  selectedCluster,
+  setSelectedCluster,
+  cluster,
+  expandedService,
+  setExpandedService,
+  taskFilter,
+  setTaskFilter,
+}: {
+  ecsClusters: ECSCluster[];
+  selectedCluster: string;
+  setSelectedCluster: (name: string) => void;
+  cluster: ECSCluster;
+  expandedService: string | null;
+  setExpandedService: (name: string | null) => void;
+  taskFilter: "all" | ECSTaskStatus;
+  setTaskFilter: (filter: "all" | ECSTaskStatus) => void;
+}) {
+  const { data: ecsServicesData } = useFetch<ECSService[]>(`/api/ecs/services/${selectedCluster}`);
+  const { data: ecsTasksData } = useFetch<ECSTask[]>(
+    `/api/ecs/tasks/${selectedCluster}/${selectedCluster}`,
+  );
+  const { data: ecsEventsData } = useFetch<ECSEvent[]>(`/api/ecs/events/${selectedCluster}`);
+
+  const services = (ecsServicesData ?? []).filter((s) => s.clusterName === selectedCluster);
+  const clusterTasks = (ecsTasksData ?? []).filter((t) => t.clusterName === selectedCluster);
+  const events = ecsEventsData ?? [];
 
   const totalRunning = services.reduce((sum, s) => sum + s.runningCount, 0);
   const totalDesired = services.reduce((sum, s) => sum + s.desiredCount, 0);

@@ -1,3 +1,4 @@
+import type { CloudWatchAlarm } from "@shared/types";
 import { AlertTriangle, Bell, BellOff, Plus } from "lucide-react";
 import {
   CartesianGrid,
@@ -9,8 +10,11 @@ import {
   YAxis,
 } from "recharts";
 import { DataTable } from "../components/DataTable";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { cloudWatchAlarms, cpuMetrics, networkMetrics } from "../lib/mock-data";
+import { cpuMetrics, networkMetrics } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 const stateColors: Record<string, string> = {
   OK: "text-emerald-400",
@@ -25,8 +29,19 @@ const stateBg: Record<string, string> = {
 };
 
 export function CloudWatchPage() {
-  const okCount = cloudWatchAlarms.filter((a) => a.state === "OK").length;
-  const alarmCount = cloudWatchAlarms.filter((a) => a.state === "ALARM").length;
+  const {
+    data: cloudWatchAlarms,
+    loading,
+    error,
+    refetch,
+  } = useFetch<CloudWatchAlarm[]>("/api/aws/cloudwatch/alarms");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+
+  const alarms = cloudWatchAlarms ?? [];
+  const okCount = alarms.filter((a) => a.state === "OK").length;
+  const alarmCount = alarms.filter((a) => a.state === "ALARM").length;
 
   return (
     <div className="space-y-6">
@@ -40,7 +55,7 @@ export function CloudWatchPage() {
         />
         <StatCard
           title="Insufficient Data"
-          value={cloudWatchAlarms.length - okCount - alarmCount}
+          value={alarms.length - okCount - alarmCount}
           icon={<BellOff size={22} />}
           color="blue"
         />
@@ -100,7 +115,7 @@ export function CloudWatchPage() {
       </div>
 
       <DataTable
-        data={cloudWatchAlarms}
+        data={alarms}
         keyExtractor={(a) => a.name}
         columns={[
           {

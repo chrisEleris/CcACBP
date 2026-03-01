@@ -39,6 +39,8 @@ jobs:
 
       - name: Build main
         working-directory: main-src
+        env:
+          VITE_BASE_PATH: /CcACBP/
         run: pnpm build
 
       # ----- Build dev (preview) -----
@@ -62,8 +64,8 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/dev
-          cp -r main-src/dist/* _site/
-          cp -r dev-src/dist/* _site/dev/
+          cp -r main-src/dist/public/* _site/
+          cp -r dev-src/dist/public/* _site/dev/
 
       - uses: actions/upload-pages-artifact@v3
         with:

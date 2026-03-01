@@ -104,3 +104,9 @@ variable "cpu_scaling_target" {
   type        = number
   default     = 70
 }
+
+variable "assign_public_ip" {
+  description = "Assign public IP to ECS tasks (needed in public subnets without NAT)"
+  type        = bool
+  default     = false
+}

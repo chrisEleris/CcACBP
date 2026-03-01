@@ -72,6 +72,11 @@ resource "aws_iam_role" "ecs_task" {
   }
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_task_readonly" {
+  role       = aws_iam_role.ecs_task.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
 # ── Security Group ─────────────────────────────────────────
 
 resource "aws_security_group" "ecs" {
@@ -177,7 +182,7 @@ resource "aws_ecs_service" "app" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
+    assign_public_ip = var.assign_public_ip
   }
 
   load_balancer {

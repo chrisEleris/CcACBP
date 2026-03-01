@@ -1,9 +1,25 @@
+import type { EC2Instance } from "@shared/types";
 import { Play, Plus, RotateCcw, Square, Trash2 } from "lucide-react";
 import { DataTable } from "../components/DataTable";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatusBadge } from "../components/StatusBadge";
-import { ec2Instances } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 export function EC2Page() {
+  const {
+    data: ec2Instances,
+    loading,
+    error,
+    refetch,
+  } = useFetch<EC2Instance[]>("/api/aws/ec2/instances");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!ec2Instances || ec2Instances.length === 0)
+    return <EmptyState message="No EC2 instances found" />;
+
   const running = ec2Instances.filter((i) => i.state === "running").length;
   const stopped = ec2Instances.filter((i) => i.state === "stopped").length;
 

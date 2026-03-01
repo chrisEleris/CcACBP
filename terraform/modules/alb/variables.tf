@@ -35,3 +35,9 @@ variable "health_check_path" {
 #   type        = string
 #   default     = ""
 # }
+
+variable "allowed_cidr_blocks" {
+  description = "CIDR blocks allowed to access the ALB (set to your IP for security)"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}

@@ -1,3 +1,4 @@
+import type { CostData } from "@shared/types";
 import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Bar,
@@ -12,36 +13,52 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { costHistory } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
-const latest = costHistory[costHistory.length - 1];
-const previous = costHistory[costHistory.length - 2];
-
-const YEAR = new Date().getFullYear();
-const currentSubtitle = latest ? `${latest.month} ${YEAR}` : "";
-const previousSubtitle = previous ? `${previous.month} ${YEAR}` : "";
-
-function totalCost(d: typeof latest): number {
+function totalCost(d: CostData | undefined): number {
   return d ? d.ec2 + d.s3 + d.rds + d.lambda + d.other : 0;
 }
 
-const currentTotal = totalCost(latest);
-const previousTotal = totalCost(previous);
-const changePercent =
-  previousTotal > 0 ? (((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1) : "0";
-
-const breakdownData = latest
-  ? [
-      { name: "EC2", value: latest.ec2, color: "#3b82f6" },
-      { name: "S3", value: latest.s3, color: "#10b981" },
-      { name: "RDS", value: latest.rds, color: "#f59e0b" },
-      { name: "Lambda", value: latest.lambda, color: "#8b5cf6" },
-      { name: "Other", value: latest.other, color: "#6b7280" },
-    ]
-  : [];
+const YEAR = new Date().getFullYear();
 
 export function CostPage() {
+  const {
+    data: costHistory,
+    loading,
+    error,
+    refetch,
+  } = useFetch<CostData[]>("/api/aws/costs/summary");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!costHistory || costHistory.length === 0)
+    return <EmptyState message="No cost data available" />;
+
+  const latest = costHistory[costHistory.length - 1];
+  const previous = costHistory[costHistory.length - 2];
+
+  const currentSubtitle = latest ? `${latest.month} ${YEAR}` : "";
+  const previousSubtitle = previous ? `${previous.month} ${YEAR}` : "";
+
+  const currentTotal = totalCost(latest);
+  const previousTotal = totalCost(previous);
+  const changePercent =
+    previousTotal > 0 ? (((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1) : "0";
+
+  const breakdownData = latest
+    ? [
+        { name: "EC2", value: latest.ec2, color: "#3b82f6" },
+        { name: "S3", value: latest.s3, color: "#10b981" },
+        { name: "RDS", value: latest.rds, color: "#f59e0b" },
+        { name: "Lambda", value: latest.lambda, color: "#8b5cf6" },
+        { name: "Other", value: latest.other, color: "#6b7280" },
+      ]
+    : [];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

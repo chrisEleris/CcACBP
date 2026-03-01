@@ -79,12 +79,13 @@ module "ecr" {
 module "alb" {
   source = "../../modules/alb"
 
-  project_name      = var.project_name
-  environment       = "dev"
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_ids = module.vpc.public_subnet_ids
-  container_port    = 3000
-  health_check_path = "/api/health"
+  project_name        = var.project_name
+  environment         = "dev"
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  container_port      = 3000
+  health_check_path   = "/api/health"
+  allowed_cidr_blocks = ["0.0.0.0/0"] # Restrict to your IP manually after deploy
 }
 
 module "ecs" {
@@ -116,6 +117,8 @@ module "ecs" {
   }
 
   log_retention_days = 7
+
+  assign_public_ip = true # Required — no NAT gateway in dev
 
   # No auto-scaling in dev
   enable_autoscaling = false

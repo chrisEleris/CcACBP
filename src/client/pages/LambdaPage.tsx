@@ -1,9 +1,25 @@
+import type { LambdaFunction } from "@shared/types";
 import { AlertTriangle, Zap } from "lucide-react";
 import { DataTable } from "../components/DataTable";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { lambdaFunctions } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 export function LambdaPage() {
+  const {
+    data: lambdaFunctions,
+    loading,
+    error,
+    refetch,
+  } = useFetch<LambdaFunction[]>("/api/aws/lambda/functions");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!lambdaFunctions || lambdaFunctions.length === 0)
+    return <EmptyState message="No Lambda functions found" />;
+
   const totalInvocations = lambdaFunctions.reduce((sum, f) => sum + f.invocations24h, 0);
   const totalErrors = lambdaFunctions.reduce((sum, f) => sum + f.errors24h, 0);
 
