@@ -152,3 +152,77 @@ export type WafTopThreat = {
   blocked: number;
   ruleTriggered: string;
 };
+
+export type JenkinsBuildStatus =
+  | "SUCCESS"
+  | "FAILURE"
+  | "UNSTABLE"
+  | "ABORTED"
+  | "IN_PROGRESS"
+  | "QUEUED";
+
+export type JenkinsPipelineStage = {
+  name: string;
+  status: JenkinsBuildStatus;
+  durationMs: number;
+};
+
+export type JenkinsBuild = {
+  number: number;
+  status: JenkinsBuildStatus;
+  timestamp: string;
+  durationMs: number;
+  trigger: string;
+  stages: JenkinsPipelineStage[];
+};
+
+export type JenkinsJob = {
+  name: string;
+  fullName: string;
+  url: string;
+  type: "pipeline" | "multibranch" | "freestyle";
+  lastBuild: JenkinsBuild | null;
+  healthScore: number;
+  enabled: boolean;
+  description: string;
+};
+
+export type DeployParameter = {
+  name: string;
+  type: "string" | "choice" | "boolean";
+  defaultValue: string;
+  description: string;
+  choices?: string[];
+};
+
+export type DeployConfig = {
+  id: string;
+  name: string;
+  jenkinsJob: string;
+  targetEnv: "dev" | "staging" | "prod";
+  targetService: string;
+  awsRegion: string;
+  deployStrategy: "rolling" | "blue-green" | "canary";
+  autoApprove: boolean;
+  lastDeployed: string | null;
+  lastStatus: JenkinsBuildStatus | null;
+  parameters: DeployParameter[];
+};
+
+export type JenkinsQueueItem = {
+  id: number;
+  jobName: string;
+  reason: string;
+  inQueueSince: string;
+  estimatedDuration: number;
+};
+
+export type JenkinsServerInfo = {
+  url: string;
+  version: string;
+  connected: boolean;
+  nodeCount: number;
+  executorsBusy: number;
+  executorsTotal: number;
+  queueLength: number;
+};
