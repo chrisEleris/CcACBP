@@ -55,12 +55,11 @@ This ensures you use correct:
 
 ### Backend Frameworks
 
-#### {{BACKEND_FRAMEWORK}} Patterns
+#### Hono Patterns
 
-**For Hono/Elysia/Express/Fastify:**
 ```typescript
 // Route definition pattern
-app.get('/api/{{resource}}', async (c) => {
+app.get('/api/users', async (c) => {
   try {
     const result = await service.getAll();
     return c.json(result, 200);
@@ -71,50 +70,14 @@ app.get('/api/{{resource}}', async (c) => {
 });
 
 // With validation (Zod)
-app.post('/api/{{resource}}',
-  zValidator('json', createSchema),
+app.post('/api/users',
+  zValidator('json', createUserSchema),
   async (c) => {
     const data = c.req.valid('json');
     const result = await service.create(data);
     return c.json(result, 201);
   }
 );
-```
-
-**For FastAPI (Python):**
-```python
-@router.get("/api/{{resource}}")
-async def get_all(db: Session = Depends(get_db)):
-    return service.get_all(db)
-
-@router.post("/api/{{resource}}", status_code=201)
-async def create(
-    data: CreateSchema,
-    db: Session = Depends(get_db)
-):
-    return service.create(db, data)
-```
-
-**For Gin (Go):**
-```go
-func GetAll(c *gin.Context) {
-    result, err := service.GetAll()
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(200, result)
-}
-```
-
-**For Axum (Rust):**
-```rust
-async fn get_all(
-    State(state): State<AppState>,
-) -> Result<Json<Vec<Resource>>, AppError> {
-    let result = service::get_all(&state.db).await?;
-    Ok(Json(result))
-}
 ```
 
 ---
@@ -124,10 +87,10 @@ async fn get_all(
 #### React Patterns
 ```typescript
 // Component with data fetching
-function ResourceList() {
+function UserList() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => api.getResources(),
+    queryKey: ['users'],
+    queryFn: () => api.getUsers(),
   });
 
   if (isLoading) return <Loader />;
@@ -143,7 +106,7 @@ function ResourceList() {
 }
 
 // Form with validation
-function CreateForm() {
+function CreateUserForm() {
   const form = useForm({
     initialValues: { name: '', email: '' },
     validate: {
@@ -152,9 +115,9 @@ function CreateForm() {
   });
 
   const mutation = useMutation({
-    mutationFn: (data) => api.create(data),
+    mutationFn: (data) => api.createUser(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['resources']);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       form.reset();
     },
   });
@@ -167,105 +130,37 @@ function CreateForm() {
 }
 ```
 
-#### Vue Patterns
-```vue
-<script setup lang="ts">
-const { data, pending, error } = await useFetch('/api/resources')
-
-async function handleSubmit(data: CreateData) {
-  await $fetch('/api/resources', {
-    method: 'POST',
-    body: data
-  })
-  refresh()
-}
-</script>
-```
-
-#### Svelte Patterns
-```svelte
-<script lang="ts">
-  import { onMount } from 'svelte';
-  
-  let resources = [];
-  let loading = true;
-  
-  onMount(async () => {
-    resources = await fetch('/api/resources').then(r => r.json());
-    loading = false;
-  });
-</script>
-```
-
 ---
 
 ### Database Patterns
 
-#### ORM Patterns (Drizzle/Prisma/SQLAlchemy/GORM/SeaORM)
+#### Drizzle ORM Patterns
 
-**TypeScript (Drizzle):**
 ```typescript
 // Schema definition
-export const resources = sqliteTable('resources', {
+export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  email: text('email').notNull().unique(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-// Queries
-const all = await db.select().from(resources);
-const one = await db.select().from(resources).where(eq(resources.id, id));
-const created = await db.insert(resources).values(data).returning();
-await db.update(resources).set(data).where(eq(resources.id, id));
-await db.delete(resources).where(eq(resources.id, id));
-```
-
-**Python (SQLAlchemy):**
-```python
-# Model definition
-class Resource(Base):
-    __tablename__ = "resources"
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-# Queries
-all = db.query(Resource).all()
-one = db.query(Resource).filter(Resource.id == id).first()
-db.add(Resource(**data))
-db.commit()
-```
-
-**Go (GORM):**
-```go
-// Model definition
-type Resource struct {
-    ID        string `gorm:"primaryKey"`
-    Name      string `gorm:"not null"`
-    CreatedAt time.Time
-}
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 
 // Queries
-var resources []Resource
-db.Find(&resources)
-db.First(&resource, "id = ?", id)
-db.Create(&resource)
-```
-
-**Rust (SeaORM):**
-```rust
-// Queries
-let resources: Vec<resource::Model> = Resource::find().all(db).await?;
-let resource = Resource::find_by_id(id).one(db).await?;
-let new_resource = resource::ActiveModel { ... };
-new_resource.insert(db).await?;
+const all = await db.select().from(users);
+const one = await db.select().from(users).where(eq(users.id, id));
+const created = await db.insert(users).values(data).returning();
+await db.update(users).set(data).where(eq(users.id, id));
+await db.delete(users).where(eq(users.id, id));
 ```
 
 ---
 
 ### State Management Patterns
 
-#### Client State (Zustand/Jotai/Pinia)
+#### Client State (Zustand/Jotai)
 
 **Zustand (React):**
 ```typescript
@@ -282,49 +177,20 @@ const userAtom = atom<User | null>(null);
 const isLoggedInAtom = atom((get) => get(userAtom) !== null);
 ```
 
-**Pinia (Vue):**
-```typescript
-export const useUserStore = defineStore('user', {
-  state: () => ({ user: null }),
-  actions: {
-    setUser(user) { this.user = user },
-    logout() { this.user = null },
-  },
-});
-```
-
 ---
 
 ### Validation Patterns
 
-#### Schema Validation (Zod/Pydantic/validator)
+#### Schema Validation (Zod)
 
-**TypeScript (Zod):**
 ```typescript
-const createSchema = z.object({
+const createUserSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
   age: z.number().int().positive().optional(),
 });
 
-type CreateData = z.infer<typeof createSchema>;
-```
-
-**Python (Pydantic):**
-```python
-class CreateData(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    age: Optional[PositiveInt] = None
-```
-
-**Go (validator):**
-```go
-type CreateData struct {
-    Name  string `validate:"required,min=1,max=100"`
-    Email string `validate:"required,email"`
-    Age   *int   `validate:"omitempty,gt=0"`
-}
+type CreateUserData = z.infer<typeof createUserSchema>;
 ```
 
 ---
@@ -341,7 +207,7 @@ type CreateData struct {
 ```bash
 # Check project structure
 ls -la
-cat package.json  # or pyproject.toml, go.mod, Cargo.toml
+cat package.json
 
 # Check existing patterns
 ls src/
@@ -381,17 +247,17 @@ cat package.json | grep dependencies
 
 ### Step 5: Test Implementation
 ```bash
-# Type check (TypeScript)
-pnpm typecheck  # or npm run typecheck
+# Type check
+pnpm typecheck
 
 # Lint
-pnpm lint  # or npm run lint
+pnpm lint
 
 # Test
-pnpm test  # or npm run test
+pnpm test
 
 # Build
-pnpm build  # or npm run build
+pnpm build
 ```
 
 ---
@@ -401,26 +267,9 @@ pnpm build  # or npm run build
 ### TypeScript
 - No `any` types (use `unknown` if needed)
 - Proper type inference
-- Use validation library for runtime checks
+- Use Zod for runtime validation
 - Type all function parameters and returns
-
-### Python
-- Type hints on all functions
-- Pydantic for data validation
-- Follow PEP 8 style guide
-- Use async where appropriate
-
-### Go
-- Proper error handling (no ignored errors)
-- Use context for cancellation
-- Follow Go conventions (gofmt, golint)
-- Proper struct tags
-
-### Rust
-- Handle all Result/Option types
-- Use proper error types
-- Follow Rust conventions (clippy, rustfmt)
-- Proper lifetime annotations
+- Use Biome for linting and formatting
 
 ---
 

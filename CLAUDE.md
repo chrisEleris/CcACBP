@@ -1,17 +1,17 @@
-# {{PROJECT_NAME}} Coding Standards & Best Practices
+# CcACBP Coding Standards & Best Practices
 
-**Version:** {{VERSION}}
-**Last Updated:** {{DATE}}
-**Architecture:** {{ARCHITECTURE_TYPE}}
+**Version:** 1.0.0
+**Last Updated:** 2026-03-01
+**Architecture:** Full-Stack Web Application (Monorepo)
 
 ---
 
 ## Quick Start
 
-1. Copy this file to your project root as `CLAUDE.md`
-2. Replace all `{{PLACEHOLDER}}` values with your project specifics
-3. Delete language/framework sections that don't apply to your stack
-4. Add project-specific patterns as needed
+1. Run `pnpm install` to install dependencies
+2. Run `pnpm dev` to start the development server
+3. Run `pnpm test` to run tests
+4. Run `pnpm lint` to check code quality
 
 ---
 
@@ -21,13 +21,13 @@
 
 | Setting | Value | Options |
 |---------|-------|---------|
-| **Language** | `{{LANGUAGE}}` | TypeScript, JavaScript, Python, Go, Rust |
-| **Package Manager** | `{{PACKAGE_MANAGER}}` | pnpm, bun, npm, yarn, pip, poetry, cargo, go mod |
-| **Backend Framework** | `{{BACKEND_FRAMEWORK}}` | Hono, Elysia, Express, Fastify, FastAPI, Gin, Axum |
-| **Frontend Framework** | `{{FRONTEND_FRAMEWORK}}` | React, Vue, Svelte, Solid, None |
-| **Database/ORM** | `{{DATABASE_ORM}}` | Drizzle, Prisma, SQLAlchemy, GORM, Diesel |
-| **Testing Framework** | `{{TESTING_FRAMEWORK}}` | Vitest, Jest, pytest, go test, cargo test |
-| **Linter/Formatter** | `{{LINTER_FORMATTER}}` | Biome, ESLint+Prettier, Ruff, golangci-lint, rustfmt |
+| **Language** | `TypeScript` | TypeScript, JavaScript, Python, Go, Rust |
+| **Package Manager** | `pnpm` | pnpm, bun, npm, yarn, pip, poetry, cargo, go mod |
+| **Backend Framework** | `Hono` | Hono, Elysia, Express, Fastify, FastAPI, Gin, Axum |
+| **Frontend Framework** | `React` | React, Vue, Svelte, Solid, None |
+| **Database/ORM** | `Drizzle` | Drizzle, Prisma, SQLAlchemy, GORM, Diesel |
+| **Testing Framework** | `Vitest` | Vitest, Jest, pytest, go test, cargo test |
+| **Linter/Formatter** | `Biome` | Biome, ESLint+Prettier, Ruff, golangci-lint, rustfmt |
 
 ---
 
@@ -854,18 +854,58 @@ function calculateTotal(basePrice: number, taxRate: number): number {
 
 ### 13.1 Branch Strategy
 
+```
+main  ← production (auto-deploys to GitHub Pages root)
+ │
+dev   ← integration / preview (auto-deploys to /dev/ path)
+ │
+ └── feature/issue-{n}-{desc}  ← working branches
+```
+
+**Live URLs (auto-deployed on push):**
+
+| Branch | URL | Purpose |
+|--------|-----|---------|
+| `main` | `https://chrisEleris.github.io/CcACBP/` | Production |
+| `dev` | `https://chrisEleris.github.io/CcACBP/dev/` | Preview / QA |
+
+### 13.2 Feature Development Workflow
+
 **MANDATORY: Create feature branch before implementing ANY issue.**
 
 ```bash
-git checkout develop && git pull
+# 1. Start from latest dev
+git checkout dev && git pull origin dev
+
+# 2. Create feature branch
 git checkout -b feature/issue-{number}-{description}
-# ... implement ...
+
+# 3. Implement (follow TDD cycle)
+# ... write tests, then code ...
+
+# 4. Run quality gates
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
+
+# 5. Commit and push
 git commit -m "feat(scope): description"
 git push origin feature/issue-{number}-{description}
-gh pr create --base develop
+
+# 6. Create PR targeting dev
+gh pr create --base dev
 ```
 
-### 13.2 Branch Naming
+### 13.3 Promoting to Production
+
+```bash
+# Only after dev is tested and stable:
+# 1. Create PR: dev → main
+gh pr create --base main --head dev --title "Release: <summary>"
+
+# 2. Merge after review
+# 3. GitHub Pages auto-deploys both branches
+```
+
+### 13.4 Branch Naming
 
 | Type | Pattern | Example |
 |------|---------|---------|
@@ -874,15 +914,15 @@ gh pr create --base develop
 | Hotfix | `hotfix/{desc}` | `hotfix/security-patch` |
 | Epic | `feature/epic-{n}-{name}` | `feature/epic-1-user-management` |
 
-### 13.3 Protected Branches
+### 13.5 Protected Branches
 
-| Branch | Direct Commits | Status |
-|--------|----------------|--------|
-| `main` | **NEVER** | Production |
-| `develop` | **NEVER** | Integration |
-| `feature/*` | YES | Working branch |
+| Branch | Direct Commits | PR Target | Status |
+|--------|----------------|-----------|--------|
+| `main` | **NEVER** | From `dev` only | Production |
+| `dev` | **NEVER** | From `feature/*` | Integration / Preview |
+| `feature/*` | YES | Into `dev` | Working branch |
 
-### 13.4 Commit Messages (Conventional Commits)
+### 13.6 Commit Messages (Conventional Commits)
 
 ```bash
 <type>(<scope>): <subject>
@@ -893,14 +933,26 @@ git commit -m "feat(auth): add JWT refresh token"
 git commit -m "fix(api): handle null response"
 ```
 
-### 13.5 Pre-Commit Quality Gates
+### 13.7 Pre-Commit Quality Gates
 
 ```bash
-{{PACKAGE_MANAGER}} typecheck   # Type checking
-{{PACKAGE_MANAGER}} lint        # Linting
-{{PACKAGE_MANAGER}} test        # Tests
-{{PACKAGE_MANAGER}} build       # Build verification
+pnpm typecheck   # Type checking
+pnpm lint        # Linting
+pnpm test        # Tests
+pnpm build       # Build verification
 ```
+
+### 13.8 GitHub Pages Deployment
+
+Deployments are fully automated via GitHub Actions (`.github/workflows/deploy.yml`).
+
+| Trigger | What happens |
+|---------|-------------|
+| Push to `main` | Rebuilds **both** main + dev and deploys combined site |
+| Push to `dev` | Rebuilds **both** main + dev and deploys combined site |
+| Manual dispatch | Same as above (trigger from Actions tab) |
+
+**Setup (one-time):** Go to repo **Settings > Pages > Source** and select **GitHub Actions**.
 
 ---
 
@@ -1597,7 +1649,7 @@ If a breaking change is ABSOLUTELY necessary:
 **All Claude Code files MUST be in project root:**
 
 ```
-{{PROJECT_ROOT}}/.claude/
+.claude/
 ├── plans/                  # Implementation plans
 ├── docs/                   # Project documentation
 ├── agents/                 # Agent configurations
@@ -1608,7 +1660,7 @@ If a breaking change is ABSOLUTELY necessary:
 
 | Location | Status |
 |----------|--------|
-| `{{PROJECT_ROOT}}/.claude/` | **REQUIRED** |
+| `.claude/` | **REQUIRED** |
 | `~/.claude/` (user home) | **PROHIBITED** |
 
 ---
@@ -1636,4 +1688,4 @@ If a breaking change is ABSOLUTELY necessary:
 
 **End of Document**
 
-*This template provides universal coding standards. Replace `{{PLACEHOLDERS}}` and remove sections that don't apply to your stack.*
+*These are the coding standards for the CcACBP project.*
