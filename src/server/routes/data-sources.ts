@@ -5,6 +5,46 @@ import { z } from "zod";
 import { db } from "../db/index";
 import { dataSources } from "../db/schema";
 
+const SENSITIVE_CONFIG_KEYS = new Set([
+  "password",
+  "secret",
+  "token",
+  "apiKey",
+  "api_key",
+  "accessKey",
+  "access_key",
+  "secretKey",
+  "secret_key",
+  "credentials",
+]);
+
+/**
+ * Redacts sensitive fields from a data source config JSON string.
+ * Replaces values of known credential keys with "***REDACTED***".
+ */
+function redactConfig(configStr: string): string {
+  try {
+    const parsed = JSON.parse(configStr) as Record<string, unknown>;
+    const redacted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (SENSITIVE_CONFIG_KEYS.has(key)) {
+        redacted[key] = "***REDACTED***";
+      } else {
+        redacted[key] = value;
+      }
+    }
+    return JSON.stringify(redacted);
+  } catch {
+    return configStr;
+  }
+}
+
+type DataSourceRow = typeof dataSources.$inferSelect;
+
+function redactDataSource(row: DataSourceRow): DataSourceRow {
+  return { ...row, config: redactConfig(row.config) };
+}
+
 const createDataSourceSchema = z.object({
   name: z.string().min(1),
   type: z.enum(["cloudwatch", "redshift", "mysql", "s3", "csv"]),
@@ -23,7 +63,7 @@ export const dataSourceRoutes = new Hono()
   .get("/", async (c) => {
     try {
       const all = await db.select().from(dataSources).orderBy(desc(dataSources.createdAt));
-      return c.json({ data: all });
+      return c.json({ data: all.map(redactDataSource) });
     } catch (error) {
       console.error("Error listing data sources:", error);
       return c.json({ message: "Failed to list data sources" }, 500);
@@ -37,7 +77,7 @@ export const dataSourceRoutes = new Hono()
       if (!row) {
         return c.json({ message: "Data source not found" }, 404);
       }
-      return c.json({ data: row });
+      return c.json({ data: redactDataSource(row) });
     } catch (error) {
       console.error("Error getting data source:", error);
       return c.json({ message: "Failed to get data source" }, 500);

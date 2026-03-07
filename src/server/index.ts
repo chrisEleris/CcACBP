@@ -20,7 +20,10 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: config.NODE_ENV === "production" ? "https://chrisEleris.github.io" : "*",
+    origin:
+      config.NODE_ENV === "production"
+        ? "https://chrisEleris.github.io"
+        : ["http://localhost:5173", "http://localhost:4173", "http://localhost:3000"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
     maxAge: 86400,

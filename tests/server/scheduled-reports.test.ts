@@ -386,6 +386,32 @@ describe("Scheduled Reports API routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("returns 400 when cronExpression is an invalid format", async () => {
+      const reportId = await createReport("Bad Cron Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "not a valid cron",
+        }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression has too few fields", async () => {
+      const reportId = await createReport("Short Cron Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "0 9 *",
+        }),
+      });
+      expect(res.status).toBe(400);
+    });
+
     it("returns 400 when cronExpression is an empty string", async () => {
       const res = await app.request("/api/scheduled-reports", {
         method: "POST",

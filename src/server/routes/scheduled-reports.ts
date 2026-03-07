@@ -6,9 +6,27 @@ import { db } from "../db/index";
 import { savedReports } from "../db/schema";
 import { type NewScheduledReport, scheduledReports } from "../db/schema-scheduled";
 
+/**
+ * Basic cron expression validation.
+ * Accepts standard 5-field cron expressions (minute hour day month weekday).
+ * Each field allows: numbers, ranges (1-5), lists (1,3,5), steps (asterisk/5), and wildcards.
+ */
+const CRON_FIELD = /^(\*|[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*)(\/[0-9]+)?$/;
+const cronExpression = z
+  .string()
+  .min(1)
+  .refine(
+    (val) => {
+      const parts = val.trim().split(/\s+/);
+      if (parts.length < 5 || parts.length > 6) return false;
+      return parts.every((part) => CRON_FIELD.test(part));
+    },
+    { message: "Invalid cron expression. Expected 5 or 6 space-separated fields." },
+  );
+
 const createScheduleSchema = z.object({
   reportId: z.string().min(1),
-  cronExpression: z.string().min(1),
+  cronExpression,
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
   nextRunAt: z.string().optional(),
@@ -16,7 +34,7 @@ const createScheduleSchema = z.object({
 
 const updateScheduleSchema = z.object({
   reportId: z.string().min(1).optional(),
-  cronExpression: z.string().min(1).optional(),
+  cronExpression: cronExpression.optional(),
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
   nextRunAt: z.string().nullable().optional(),

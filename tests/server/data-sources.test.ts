@@ -157,4 +157,60 @@ describe("Data Source API routes", () => {
     const body = await res.json();
     expect(body.message).toBe("Data source not found");
   });
+
+  it("GET /api/data-sources redacts sensitive config fields", async () => {
+    // Create a data source with sensitive fields in config
+    await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          port: 3306,
+          password: "super-secret-pass",
+          apiKey: "sk-12345",
+        }),
+      }),
+    });
+
+    const res = await app.request("/api/data-sources");
+    const body = await res.json();
+    const found = body.data.find((ds: { name: string }) => ds.name === "Redaction Test");
+    expect(found).toBeDefined();
+
+    const config = JSON.parse(found.config);
+    // Non-sensitive fields should be preserved
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(3306);
+    // Sensitive fields should be redacted
+    expect(config.password).toBe("***REDACTED***");
+    expect(config.apiKey).toBe("***REDACTED***");
+  });
+
+  it("GET /api/data-sources/:id redacts sensitive config fields", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Single Redaction Test",
+        type: "redshift",
+        config: JSON.stringify({
+          host: "redshift.example.com",
+          secret: "top-secret",
+          token: "bearer-token-123",
+        }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const getRes = await app.request(`/api/data-sources/${id}`);
+    const body = await getRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("redshift.example.com");
+    expect(config.secret).toBe("***REDACTED***");
+    expect(config.token).toBe("***REDACTED***");
+  });
 });
