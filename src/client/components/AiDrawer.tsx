@@ -1,5 +1,6 @@
 import { Bot, Send, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { mutateApi } from "../lib/api";
 
 type AiDrawerProps = {
   pageContext: string;
@@ -149,17 +150,10 @@ export function AiDrawer({ pageContext, isOpen, onToggle }: AiDrawerProps) {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/ai/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: content.trim(), pageContext: pageContext }),
+      const body = await mutateApi<{ response: string }>("/api/ai/analyze", "POST", {
+        prompt: content.trim(),
+        pageContext: pageContext,
       });
-
-      if (!response.ok) {
-        throw new Error(`Request failed: ${response.statusText}`);
-      }
-
-      const body = (await response.json()) as { data: { response: string } };
       const assistantMsg: DrawerMessage = {
         id: `msg-${Date.now()}-assistant`,
         role: "assistant",

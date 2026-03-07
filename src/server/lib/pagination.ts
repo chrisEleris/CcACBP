@@ -27,18 +27,18 @@ export type PaginatedResponse<T> = {
 /**
  * Parses `limit` and `offset` query parameters from the request context.
  * Defaults to limit=50, offset=0. Enforces a maximum limit of 200.
+ * Each parameter is parsed independently so an invalid limit does not reset a
+ * valid offset and vice versa.
  */
 export function parsePagination(c: Context): Pagination {
-  const raw = {
-    limit: c.req.query("limit"),
-    offset: c.req.query("offset"),
+  const rawLimit = c.req.query("limit");
+  const rawOffset = c.req.query("offset");
+
+  const limitResult = z.coerce.number().int().min(1).max(MAX_LIMIT).safeParse(rawLimit);
+  const offsetResult = z.coerce.number().int().min(0).safeParse(rawOffset);
+
+  return {
+    limit: limitResult.success ? limitResult.data : DEFAULT_LIMIT,
+    offset: offsetResult.success ? offsetResult.data : DEFAULT_OFFSET,
   };
-
-  const result = paginationSchema.safeParse(raw);
-
-  if (!result.success) {
-    return { limit: DEFAULT_LIMIT, offset: DEFAULT_OFFSET };
-  }
-
-  return result.data;
 }

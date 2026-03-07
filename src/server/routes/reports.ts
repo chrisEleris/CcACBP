@@ -169,8 +169,10 @@ export const reportRoutes = new Hono()
       }
 
       // Stub: returns simulated execution results until real query engine is wired up.
-      const rowCount = Math.floor(Math.random() * 1000) + 1;
-      const durationMs = Math.floor(Math.random() * 2000) + 50;
+      const randomBytes = new Uint32Array(2);
+      crypto.getRandomValues(randomBytes);
+      const rowCount = (randomBytes[0] % 1000) + 1;
+      const durationMs = (randomBytes[1] % 2000) + 50;
       const now = new Date().toISOString();
 
       const [execution] = await db

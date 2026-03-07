@@ -3,6 +3,7 @@ import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type DataSourceStatus = "connected" | "disconnected" | "error";
@@ -78,14 +79,7 @@ export function DataSourcesPage() {
     setIsSubmitting(true);
     setFormError(null);
     try {
-      const response = await fetch("/api/data-sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to create: ${response.statusText}`);
-      }
+      await mutateApi("/api/data-sources", "POST", form);
       setIsModalOpen(false);
       setForm(DEFAULT_FORM);
       refetch();
@@ -100,10 +94,7 @@ export function DataSourcesPage() {
     setTestingId(id);
     setActionError(null);
     try {
-      const response = await fetch(`/api/data-sources/${id}/test`, { method: "POST" });
-      if (!response.ok) {
-        throw new Error(`Failed to test: ${response.statusText}`);
-      }
+      await mutateApi(`/api/data-sources/${id}/test`, "POST");
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to test connection.");
@@ -116,10 +107,7 @@ export function DataSourcesPage() {
     setDeletingId(id);
     setActionError(null);
     try {
-      const response = await fetch(`/api/data-sources/${id}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(`Failed to delete: ${response.statusText}`);
-      }
+      await mutateApi(`/api/data-sources/${id}`, "DELETE");
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to delete.");

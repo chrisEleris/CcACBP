@@ -18,6 +18,7 @@ import { DataTable } from "../components/DataTable";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type VisualizationType = "table" | "bar" | "line" | "pie" | "area" | "scatter";
@@ -105,16 +106,10 @@ export function ReportBuilderPage() {
     setPreviewError(null);
     setPreviewResult(null);
     try {
-      const response = await fetch("/api/query/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql: form.query, dataSourceId: form.dataSourceId || null }),
+      const body = await mutateApi<PreviewResult>("/api/query/execute", "POST", {
+        sql: form.query,
+        dataSourceId: form.dataSourceId || null,
       });
-      if (!response.ok) {
-        const body = (await response.json()) as { message?: string };
-        throw new Error(body.message ?? `Preview failed: ${response.statusText}`);
-      }
-      const body = (await response.json()) as { data: PreviewResult };
       setPreviewResult(body.data);
     } catch (err) {
       setPreviewError(err instanceof Error ? err.message : "Preview failed");
@@ -137,20 +132,13 @@ export function ReportBuilderPage() {
     try {
       const method = editingId ? "PUT" : "POST";
       const path = editingId ? `/api/reports/${editingId}` : "/api/reports";
-      const response = await fetch(path, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          query: form.query,
-          visualization: form.visualization,
-          dataSourceId: form.dataSourceId || undefined,
-        }),
+      await mutateApi(path, method, {
+        name: form.name,
+        description: form.description,
+        query: form.query,
+        visualization: form.visualization,
+        dataSourceId: form.dataSourceId || undefined,
       });
-      if (!response.ok) {
-        throw new Error(`Failed to save: ${response.statusText}`);
-      }
       setForm(DEFAULT_FORM);
       setEditingId(null);
       setPreviewResult(null);
@@ -188,10 +176,7 @@ export function ReportBuilderPage() {
     setDeletingId(id);
     setDeleteError(null);
     try {
-      const response = await fetch(`/api/reports/${id}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(`Failed to delete: ${response.statusText}`);
-      }
+      await mutateApi(`/api/reports/${id}`, "DELETE");
       refetchReports();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete.");

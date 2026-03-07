@@ -11,8 +11,28 @@ import { parsePagination } from "../lib/pagination";
  * Basic cron expression validation.
  * Accepts standard 5-field cron expressions (minute hour day month weekday).
  * Each field allows: numbers, ranges (1-5), lists (1,3,5), steps (asterisk/5), and wildcards.
+ * Also validates semantic ranges per field position.
  */
 const CRON_FIELD = /^(\*|[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*)(\/[0-9]+)?$/;
+const CRON_RANGES = [
+  { min: 0, max: 59 }, // minute
+  { min: 0, max: 23 }, // hour
+  { min: 1, max: 31 }, // day of month
+  { min: 1, max: 12 }, // month
+  { min: 0, max: 7 }, // day of week (0 and 7 = Sunday)
+  { min: 0, max: 59 }, // seconds (optional 6th field)
+];
+
+function validateCronFieldRange(field: string, range: { min: number; max: number }): boolean {
+  if (field === "*") return true;
+  const base = field.split("/")[0];
+  if (base === "*") return true;
+  return base.split(",").every((part) => {
+    const bounds = part.split("-").map(Number);
+    return bounds.every((n) => !Number.isNaN(n) && n >= range.min && n <= range.max);
+  });
+}
+
 const cronExpression = z
   .string()
   .min(1)
@@ -20,7 +40,9 @@ const cronExpression = z
     (val) => {
       const parts = val.trim().split(/\s+/);
       if (parts.length < 5 || parts.length > 6) return false;
-      return parts.every((part) => CRON_FIELD.test(part));
+      return parts.every(
+        (part, i) => CRON_FIELD.test(part) && validateCronFieldRange(part, CRON_RANGES[i]),
+      );
     },
     { message: "Invalid cron expression. Expected 5 or 6 space-separated fields." },
   );

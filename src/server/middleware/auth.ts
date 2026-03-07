@@ -4,15 +4,24 @@ import { config } from "../config";
 
 /**
  * Compares two strings in constant time to prevent timing attacks.
+ * When lengths differ, pads both buffers to the same length before comparing
+ * so that the comparison always runs, preventing length-based timing leaks.
  */
 function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Compare against self to burn roughly the same time, but always return false
-    const buf = Buffer.from(a);
-    timingSafeEqual(buf, buf);
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    // Pad shorter to match longer length so timingSafeEqual can run.
+    // Always return false since lengths differ.
+    const maxLen = Math.max(bufA.length, bufB.length);
+    const paddedA = Buffer.alloc(maxLen);
+    const paddedB = Buffer.alloc(maxLen);
+    bufA.copy(paddedA);
+    bufB.copy(paddedB);
+    timingSafeEqual(paddedA, paddedB);
     return false;
   }
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  return timingSafeEqual(bufA, bufB);
 }
 
 /**

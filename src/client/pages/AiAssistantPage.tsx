@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { fetchApi, mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type AgentType =
@@ -102,11 +103,9 @@ export function AiAssistantPage() {
     setMessagesLoading(true);
     setSendError(null);
     try {
-      const response = await fetch(`/api/ai/conversations/${convId}`);
-      if (!response.ok) throw new Error(`Failed to load messages: ${response.statusText}`);
-      const body = (await response.json()) as {
-        data: { conversation: Conversation; messages: Message[] };
-      };
+      const body = await fetchApi<{ conversation: Conversation; messages: Message[] }>(
+        `/api/ai/conversations/${convId}`,
+      );
       setMessages(body.data.messages);
     } catch (err) {
       setSendError(err instanceof Error ? err.message : "Failed to load messages");
@@ -126,17 +125,11 @@ export function AiAssistantPage() {
   async function handleNewConversation() {
     setIsCreating(true);
     try {
-      const response = await fetch("/api/ai/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "New Conversation",
-          pageContext: "ai",
-          agentType: selectedAgent,
-        }),
+      const body = await mutateApi<Conversation>("/api/ai/conversations", "POST", {
+        title: "New Conversation",
+        pageContext: "ai",
+        agentType: selectedAgent,
       });
-      if (!response.ok) throw new Error(`Failed to create: ${response.statusText}`);
-      const body = (await response.json()) as { data: Conversation };
       refetchConvs();
       setSelectedConvId(body.data.id);
       setMessages([]);
@@ -164,13 +157,11 @@ export function AiAssistantPage() {
     setMessages((prev) => [...prev, optimisticMsg]);
 
     try {
-      const response = await fetch(`/api/ai/conversations/${selectedConvId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "user", content: messageText }),
-      });
-      if (!response.ok) throw new Error(`Failed to send: ${response.statusText}`);
-      const body = (await response.json()) as { data: Message };
+      const body = await mutateApi<Message>(
+        `/api/ai/conversations/${selectedConvId}/messages`,
+        "POST",
+        { role: "user", content: messageText },
+      );
       // Replace optimistic message with the saved message from server
       setMessages((prev) => [...prev.filter((m) => m.id !== optimisticMsg.id), body.data]);
       refetchConvs();

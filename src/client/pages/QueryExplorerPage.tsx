@@ -2,6 +2,7 @@ import { BookOpen, ChevronDown, ChevronRight, Play, Plus, Save, Trash2 } from "l
 import { useCallback, useEffect, useState } from "react";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { fetchApi, mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type SchemaColumn = {
@@ -51,9 +52,7 @@ export function QueryExplorerPage() {
 
   const fetchSnippets = useCallback(async () => {
     try {
-      const response = await fetch("/api/query/snippets");
-      if (!response.ok) return;
-      const body = (await response.json()) as { data: SavedSnippet[] };
+      const body = await fetchApi<SavedSnippet[]>("/api/query/snippets");
       setSavedSnippets(body.data);
     } catch {
       // Silently fail — snippets are non-critical
@@ -84,16 +83,7 @@ export function QueryExplorerPage() {
     setQueryError(null);
     setQueryResult(null);
     try {
-      const response = await fetch("/api/query/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql: queryText }),
-      });
-      if (!response.ok) {
-        const body = (await response.json()) as { message?: string };
-        throw new Error(body.message ?? `Query failed: ${response.statusText}`);
-      }
-      const body = (await response.json()) as { data: QueryResult };
+      const body = await mutateApi<QueryResult>("/api/query/execute", "POST", { sql: queryText });
       setQueryResult(body.data);
     } catch (err) {
       setQueryError(err instanceof Error ? err.message : "Query execution failed");
@@ -106,17 +96,10 @@ export function QueryExplorerPage() {
     if (!snippetName.trim() || !queryText.trim()) return;
     setSnippetSaving(true);
     try {
-      const response = await fetch("/api/query/snippets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: snippetName.trim(),
-          sql: queryText,
-        }),
+      await mutateApi("/api/query/snippets", "POST", {
+        name: snippetName.trim(),
+        sql: queryText,
       });
-      if (!response.ok) {
-        throw new Error("Failed to save snippet");
-      }
       setSnippetName("");
       await fetchSnippets();
     } catch {
@@ -134,8 +117,7 @@ export function QueryExplorerPage() {
 
   async function handleDeleteSnippet(id: string) {
     try {
-      const response = await fetch(`/api/query/snippets/${id}`, { method: "DELETE" });
-      if (!response.ok) return;
+      await mutateApi(`/api/query/snippets/${id}`, "DELETE");
       await fetchSnippets();
     } catch {
       // Non-critical

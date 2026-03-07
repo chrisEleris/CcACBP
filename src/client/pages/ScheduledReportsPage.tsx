@@ -3,6 +3,7 @@ import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type ExportFormat = "csv" | "json" | "pdf" | "xlsx";
@@ -115,14 +116,7 @@ export function ScheduledReportsPage() {
     try {
       const method = editingId ? "PUT" : "POST";
       const path = editingId ? `/api/scheduled-reports/${editingId}` : "/api/scheduled-reports";
-      const response = await fetch(path, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to save: ${response.statusText}`);
-      }
+      await mutateApi(path, method, form);
       handleCloseModal();
       refetch();
     } catch (err) {
@@ -136,14 +130,9 @@ export function ScheduledReportsPage() {
     setTogglingId(schedule.id);
     setActionError(null);
     try {
-      const response = await fetch(`/api/scheduled-reports/${schedule.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !schedule.enabled }),
+      await mutateApi(`/api/scheduled-reports/${schedule.id}`, "PUT", {
+        enabled: !schedule.enabled,
       });
-      if (!response.ok) {
-        throw new Error(`Failed to update: ${response.statusText}`);
-      }
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to update schedule.");
@@ -156,10 +145,7 @@ export function ScheduledReportsPage() {
     setRunningId(id);
     setActionError(null);
     try {
-      const response = await fetch(`/api/scheduled-reports/${id}/run`, { method: "POST" });
-      if (!response.ok) {
-        throw new Error(`Failed to run: ${response.statusText}`);
-      }
+      await mutateApi(`/api/scheduled-reports/${id}/run`, "POST");
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to run schedule.");
@@ -172,10 +158,7 @@ export function ScheduledReportsPage() {
     setDeletingId(id);
     setActionError(null);
     try {
-      const response = await fetch(`/api/scheduled-reports/${id}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(`Failed to delete: ${response.statusText}`);
-      }
+      await mutateApi(`/api/scheduled-reports/${id}`, "DELETE");
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to delete schedule.");

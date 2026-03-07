@@ -15,6 +15,7 @@ import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { mutateApi } from "../lib/api";
 import { useFetch } from "../lib/use-fetch";
 
 type Props = {
@@ -100,14 +101,7 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
     setRunError(null);
     setLastExecution(null);
     try {
-      const response = await fetch(`/api/reports/${reportId}/execute`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        const body = (await response.json()) as { message?: string };
-        throw new Error(body.message ?? `Execution failed: ${response.statusText}`);
-      }
-      const body = (await response.json()) as { data: ExecutionRecord };
+      const body = await mutateApi<ExecutionRecord>(`/api/reports/${reportId}/execute`, "POST");
       setLastExecution(body.data);
       refetchExecutions();
       refetchReport();
