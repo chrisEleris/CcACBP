@@ -1,8 +1,8 @@
 import type { JenkinsBuild } from "@shared/types";
 import { ChevronDown, ChevronUp, History, X } from "lucide-react";
 import { Fragment, useState } from "react";
-import { formatDuration, timeAgo } from "./jenkins-helpers";
 import { StageVisualization, StatusBadge } from "./JenkinsJobsTable";
+import { formatDuration, timeAgo } from "./jenkins-helpers";
 
 type JenkinsBuildHistoryProps = {
   jobName: string;
