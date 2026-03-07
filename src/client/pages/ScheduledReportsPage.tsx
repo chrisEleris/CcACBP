@@ -139,7 +139,7 @@ export function ScheduledReportsPage() {
       const response = await fetch(`/api/scheduled-reports/${schedule.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...schedule, enabled: !schedule.enabled }),
+        body: JSON.stringify({ enabled: !schedule.enabled }),
       });
       if (!response.ok) {
         throw new Error(`Failed to update: ${response.statusText}`);
