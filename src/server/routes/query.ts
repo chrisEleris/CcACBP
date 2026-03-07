@@ -141,9 +141,9 @@ export const queryRoutes = new Hono()
         data: {
           columns: ["id", "name", "value"],
           rows: [
-            ["1", "sample-row-1", "100"],
-            ["2", "sample-row-2", "200"],
-            ["3", "sample-row-3", "300"],
+            { id: "1", name: "sample-row-1", value: "100" },
+            { id: "2", name: "sample-row-2", value: "200" },
+            { id: "3", name: "sample-row-3", value: "300" },
           ],
           rowCount: 3,
           durationMs: 42,

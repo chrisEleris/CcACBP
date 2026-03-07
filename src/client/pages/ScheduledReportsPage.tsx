@@ -136,11 +136,14 @@ export function ScheduledReportsPage() {
     setTogglingId(schedule.id);
     setActionError(null);
     try {
-      await fetch(`/api/scheduled-reports/${schedule.id}`, {
+      const response = await fetch(`/api/scheduled-reports/${schedule.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...schedule, enabled: !schedule.enabled }),
       });
+      if (!response.ok) {
+        throw new Error(`Failed to update: ${response.statusText}`);
+      }
       refetch();
     } catch (err) {
       console.error("Operation failed:", err);
@@ -154,7 +157,10 @@ export function ScheduledReportsPage() {
     setRunningId(id);
     setActionError(null);
     try {
-      await fetch(`/api/scheduled-reports/${id}/run`, { method: "POST" });
+      const response = await fetch(`/api/scheduled-reports/${id}/run`, { method: "POST" });
+      if (!response.ok) {
+        throw new Error(`Failed to run: ${response.statusText}`);
+      }
       refetch();
     } catch (err) {
       console.error("Operation failed:", err);
@@ -168,7 +174,10 @@ export function ScheduledReportsPage() {
     setDeletingId(id);
     setActionError(null);
     try {
-      await fetch(`/api/scheduled-reports/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/scheduled-reports/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
       refetch();
     } catch (err) {
       console.error("Operation failed:", err);

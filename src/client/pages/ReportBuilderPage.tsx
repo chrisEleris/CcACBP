@@ -188,7 +188,10 @@ export function ReportBuilderPage() {
     setDeletingId(id);
     setDeleteError(null);
     try {
-      await fetch(`/api/reports/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/reports/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
       refetchReports();
     } catch (err) {
       console.error("Operation failed:", err);

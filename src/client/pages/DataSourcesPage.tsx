@@ -111,7 +111,10 @@ export function DataSourcesPage() {
     setTestingId(id);
     setActionError(null);
     try {
-      await fetch(`/api/data-sources/${id}/test`, { method: "POST" });
+      const response = await fetch(`/api/data-sources/${id}/test`, { method: "POST" });
+      if (!response.ok) {
+        throw new Error(`Failed to test: ${response.statusText}`);
+      }
       refetch();
     } catch (err) {
       console.error("Operation failed:", err);
@@ -125,7 +128,10 @@ export function DataSourcesPage() {
     setDeletingId(id);
     setActionError(null);
     try {
-      await fetch(`/api/data-sources/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/data-sources/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
       refetch();
     } catch (err) {
       console.error("Operation failed:", err);
