@@ -1,6 +1,6 @@
 import type { DeployConfig } from "@shared/types";
 import { CheckCircle2, History, Plus, Rocket, Workflow, X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import {
   deployConfigs,
@@ -54,11 +54,13 @@ export function JenkinsPage() {
   const [showNewConfigForm, setShowNewConfigForm] = useState(false);
   const [configs, setConfigs] = useState<DeployConfig[]>(deployConfigs);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  function showToast(message: string) {
+  const showToast = useCallback((message: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(message);
-    setTimeout(() => setToast(null), 3000);
-  }
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
 
   function handleBuildNow(jobName: string) {
     showToast(`Build triggered for ${jobName}`);

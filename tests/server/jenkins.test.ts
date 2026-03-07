@@ -89,6 +89,49 @@ describe("Jenkins API routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("PUT /api/jenkins/deploys/:id returns 200 with partial update body", async () => {
+    const res = await app.request("/api/jenkins/deploys/deploy-123", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "updated-deploy" }),
+    });
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect("data" in body).toBe(true);
+    expect(body.data.id).toBe("deploy-123");
+    expect(body.data.name).toBe("updated-deploy");
+    expect("message" in body).toBe(true);
+  });
+
+  it("PUT /api/jenkins/deploys/:id returns 200 with multiple fields", async () => {
+    const res = await app.request("/api/jenkins/deploys/deploy-456", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "new-name",
+        targetEnv: "staging",
+        deployStrategy: "blue-green",
+      }),
+    });
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.data.id).toBe("deploy-456");
+    expect(body.data.name).toBe("new-name");
+    expect(body.data.targetEnv).toBe("staging");
+    expect(body.data.deployStrategy).toBe("blue-green");
+  });
+
+  it("PUT /api/jenkins/deploys/:id returns 200 with empty body", async () => {
+    const res = await app.request("/api/jenkins/deploys/deploy-789", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.data.id).toBe("deploy-789");
+  });
+
   it("POST /api/jenkins/deploys/:id/trigger returns 202", async () => {
     const res = await app.request("/api/jenkins/deploys/test-id/trigger", {
       method: "POST",

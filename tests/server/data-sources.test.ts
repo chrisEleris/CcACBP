@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "../../src/server/index";
+import { redactConfig } from "../../src/server/routes/data-sources";
 
 describe("Data Source API routes", () => {
   it("GET /api/data-sources returns empty array initially", async () => {
@@ -36,6 +37,45 @@ describe("Data Source API routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("POST /api/data-sources rejects invalid type enum value", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Bad Type",
+        type: "postgresql",
+        config: JSON.stringify({ host: "localhost" }),
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/data-sources rejects invalid JSON config", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Invalid Config",
+        type: "mysql",
+        config: "not valid json",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/data-sources rejects empty name", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "",
+        type: "mysql",
+        config: JSON.stringify({ host: "localhost" }),
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("POST /api/data-sources/:id/test updates connection status", async () => {
     // Create a source first
     const createRes = await app.request("/api/data-sources", {
@@ -55,8 +95,9 @@ describe("Data Source API routes", () => {
     });
     expect(testRes.status).toBe(200);
     const body = await testRes.json();
-    expect(body.data.status).toBe("connected");
+    expect(body.data.status).toBe("disconnected");
     expect(body.data.lastTestedAt).toBeDefined();
+    expect(body.mock).toBe(true);
   });
 
   it("DELETE /api/data-sources/:id removes a data source", async () => {
@@ -156,5 +197,230 @@ describe("Data Source API routes", () => {
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.message).toBe("Data source not found");
+  });
+
+  it("GET /api/data-sources redacts sensitive config fields", async () => {
+    // Create a data source with sensitive fields in config
+    await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          port: 3306,
+          password: "super-secret-pass",
+          apiKey: "sk-12345",
+        }),
+      }),
+    });
+
+    const res = await app.request("/api/data-sources");
+    const body = await res.json();
+    const found = body.data.find((ds: { name: string }) => ds.name === "Redaction Test");
+    expect(found).toBeDefined();
+
+    const config = JSON.parse(found.config);
+    // Non-sensitive fields should be preserved
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(3306);
+    // Sensitive fields should be redacted
+    expect(config.password).toBe("***REDACTED***");
+    expect(config.apiKey).toBe("***REDACTED***");
+  });
+
+  it("POST /api/data-sources redacts sensitive config fields in create response", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Create Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          password: "my-secret-pass",
+          accessKey: "AKIA12345",
+        }),
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.password).toBe("***REDACTED***");
+    expect(config.accessKey).toBe("***REDACTED***");
+  });
+
+  it("PUT /api/data-sources/:id redacts sensitive config fields in update response", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Update Redaction Test",
+        type: "s3",
+        config: JSON.stringify({ bucket: "test" }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const updateRes = await app.request(`/api/data-sources/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: JSON.stringify({
+          bucket: "updated-bucket",
+          secretKey: "super-secret",
+        }),
+      }),
+    });
+    expect(updateRes.status).toBe(200);
+    const body = await updateRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.bucket).toBe("updated-bucket");
+    expect(config.secretKey).toBe("***REDACTED***");
+  });
+
+  it("POST /api/data-sources/:id/test redacts sensitive config fields in response", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Test Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          credentials: "secret-creds",
+        }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const testRes = await app.request(`/api/data-sources/${id}/test`, {
+      method: "POST",
+    });
+    expect(testRes.status).toBe(200);
+    const body = await testRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.credentials).toBe("***REDACTED***");
+  });
+
+  it("GET /api/data-sources/:id redacts sensitive config fields", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Single Redaction Test",
+        type: "redshift",
+        config: JSON.stringify({
+          host: "redshift.example.com",
+          secret: "top-secret",
+          token: "bearer-token-123",
+        }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const getRes = await app.request(`/api/data-sources/${id}`);
+    const body = await getRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("redshift.example.com");
+    expect(config.secret).toBe("***REDACTED***");
+    expect(config.token).toBe("***REDACTED***");
+  });
+
+  describe("redactConfig unit tests", () => {
+    it("returns non-JSON strings unchanged", () => {
+      expect(redactConfig("not valid json")).toBe("not valid json");
+      expect(redactConfig("")).toBe("");
+    });
+
+    it("returns empty object unchanged", () => {
+      expect(redactConfig("{}")).toBe("{}");
+    });
+
+    it("preserves non-sensitive keys", () => {
+      const input = JSON.stringify({ host: "localhost", port: 3306 });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.host).toBe("localhost");
+      expect(result.port).toBe(3306);
+    });
+
+    it("redacts all known sensitive keys", () => {
+      const sensitiveKeys = [
+        "password",
+        "secret",
+        "token",
+        "apiKey",
+        "api_key",
+        "accessKey",
+        "access_key",
+        "secretKey",
+        "secret_key",
+        "credentials",
+      ];
+      const input: Record<string, string> = {};
+      for (const key of sensitiveKeys) {
+        input[key] = `value-for-${key}`;
+      }
+      const result = JSON.parse(redactConfig(JSON.stringify(input)));
+      for (const key of sensitiveKeys) {
+        expect(result[key]).toBe("***REDACTED***");
+      }
+    });
+
+    it("redacts nested sensitive keys at any depth", () => {
+      const input = JSON.stringify({
+        level1: { password: "secret1", level2: { token: "secret2" } },
+      });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.level1.password).toBe("***REDACTED***");
+      expect(result.level1.level2.token).toBe("***REDACTED***");
+    });
+
+    it("does not redact partial key matches like passwordHash", () => {
+      const input = JSON.stringify({ passwordHash: "abc123" });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.passwordHash).toBe("abc123");
+    });
+
+    it("preserves arrays without redaction", () => {
+      const input = JSON.stringify({ tags: ["a", "b"], password: "secret" });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.tags).toEqual(["a", "b"]);
+      expect(result.password).toBe("***REDACTED***");
+    });
+  });
+
+  it("POST /api/data-sources redacts sensitive config fields in nested objects", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Nested Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          database: {
+            name: "mydb",
+            password: "nested-secret",
+            credentials: "nested-creds",
+          },
+          port: 3306,
+        }),
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(3306);
+    expect(config.database.name).toBe("mydb");
+    expect(config.database.password).toBe("***REDACTED***");
+    expect(config.database.credentials).toBe("***REDACTED***");
   });
 });

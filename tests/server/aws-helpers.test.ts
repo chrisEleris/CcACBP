@@ -3,14 +3,25 @@ import { getMonthAbbr } from "../../src/server/routes/aws";
 
 describe("AWS helper functions", () => {
   describe("getMonthAbbr", () => {
-    it("returns Jan for January", () => {
-      expect(getMonthAbbr(new Date(2024, 0, 1))).toBe("Jan");
-    });
-    it("returns Jun for June", () => {
-      expect(getMonthAbbr(new Date(2024, 5, 15))).toBe("Jun");
-    });
-    it("returns Dec for December", () => {
-      expect(getMonthAbbr(new Date(2024, 11, 25))).toBe("Dec");
-    });
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    for (let i = 0; i < 12; i++) {
+      it(`returns ${months[i]} for month index ${i}`, () => {
+        expect(getMonthAbbr(new Date(2024, i, 1))).toBe(months[i]);
+      });
+    }
   });
 });

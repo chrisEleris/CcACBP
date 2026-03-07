@@ -123,10 +123,10 @@ export const ecsRoutes = new Hono()
           runningTasks: cluster.runningTasksCount ?? 0,
           pendingTasks: cluster.pendingTasksCount ?? 0,
           activeServices: cluster.activeServicesCount ?? 0,
-          cpuReservation: 0,
-          memoryReservation: 0,
-          cpuUtilization: 0,
-          memoryUtilization: 0,
+          cpuReservation: statsMap.get("CPUReservation") ?? 0,
+          memoryReservation: statsMap.get("MemoryReservation") ?? 0,
+          cpuUtilization: statsMap.get("CPUUtilization") ?? 0,
+          memoryUtilization: statsMap.get("MemoryUtilization") ?? 0,
         };
       });
 

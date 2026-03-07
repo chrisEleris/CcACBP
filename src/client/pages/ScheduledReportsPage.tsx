@@ -139,15 +139,14 @@ export function ScheduledReportsPage() {
       const response = await fetch(`/api/scheduled-reports/${schedule.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...schedule, enabled: !schedule.enabled }),
+        body: JSON.stringify({ enabled: !schedule.enabled }),
       });
       if (!response.ok) {
         throw new Error(`Failed to update: ${response.statusText}`);
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
-      setActionError("Failed to update schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to update schedule.");
     } finally {
       setTogglingId(null);
     }
@@ -163,8 +162,7 @@ export function ScheduledReportsPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
-      setActionError("Failed to run schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to run schedule.");
     } finally {
       setRunningId(null);
     }
@@ -180,8 +178,7 @@ export function ScheduledReportsPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
-      setActionError("Failed to delete schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to delete schedule.");
     } finally {
       setDeletingId(null);
     }
@@ -373,9 +370,10 @@ export function ScheduledReportsPage() {
 
       {/* Create / Edit modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <dialog
+          open
           aria-labelledby="schedule-modal-title"
+          className="fixed inset-0 z-50 m-0 flex h-full w-full items-center justify-center border-none bg-transparent p-4"
           onKeyDown={(e) => {
             if (e.key === "Escape") handleCloseModal();
           }}
@@ -533,7 +531,7 @@ export function ScheduledReportsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

@@ -41,18 +41,36 @@ describe("apiKeyAuth middleware", () => {
   });
 
   describe("when API_KEY is configured", () => {
-    describe("GET requests (non-mutating)", () => {
-      it("passes through without any API key header", async () => {
+    describe("GET requests", () => {
+      it("returns 401 when no API key is provided", async () => {
         const res = await app.request("/api/resource", { method: "GET" });
+        expect(res.status).toBe(401);
+        const body = await res.json();
+        expect(body.message).toBe("Unauthorized");
+      });
+
+      it("returns 401 when an incorrect API key is supplied", async () => {
+        const res = await app.request("/api/resource", {
+          method: "GET",
+          headers: { "X-API-Key": "wrong-key" },
+        });
+        expect(res.status).toBe(401);
+      });
+
+      it("returns 200 with a valid X-API-Key header", async () => {
+        const res = await app.request("/api/resource", {
+          method: "GET",
+          headers: { "X-API-Key": "test-secret-key" },
+        });
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.ok).toBe(true);
       });
 
-      it("passes through even when an incorrect API key is supplied", async () => {
+      it("returns 200 with a valid Authorization: Bearer header", async () => {
         const res = await app.request("/api/resource", {
           method: "GET",
-          headers: { "X-API-Key": "wrong-key" },
+          headers: { Authorization: "Bearer test-secret-key" },
         });
         expect(res.status).toBe(200);
       });

@@ -382,6 +382,7 @@ export function LogExplorerPage() {
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <select
+                aria-label="Filter by log level"
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value as LevelFilter)}
                 className="rounded-lg border border-gray-700/50 bg-gray-800/70 px-3 py-2 text-xs text-gray-300 focus:border-blue-500 focus:outline-none"
@@ -394,6 +395,7 @@ export function LogExplorerPage() {
               </select>
 
               <select
+                aria-label="Filter by time range"
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value as TimeRange)}
                 className="rounded-lg border border-gray-700/50 bg-gray-800/70 px-3 py-2 text-xs text-gray-300 focus:border-blue-500 focus:outline-none"

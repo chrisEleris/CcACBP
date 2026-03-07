@@ -1,5 +1,5 @@
 import { BookOpen, ChevronDown, ChevronRight, Play, Plus, Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useFetch } from "../lib/use-fetch";
@@ -7,7 +7,6 @@ import { useFetch } from "../lib/use-fetch";
 type SchemaColumn = {
   name: string;
   type: string;
-  nullable: boolean;
 };
 
 type SchemaTable = {
@@ -22,12 +21,13 @@ type QueryResult = {
   columns: string[];
   rows: QueryResultRow[];
   rowCount: number;
-  executionTimeMs: number;
+  durationMs: number;
 };
 
 type SavedSnippet = {
   id: string;
   name: string;
+  description: string;
   sql: string;
   createdAt: string;
 };
@@ -46,6 +46,25 @@ export function QueryExplorerPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [savedSnippets, setSavedSnippets] = useState<SavedSnippet[]>([]);
   const [snippetName, setSnippetName] = useState("");
+  const [snippetsLoading, setSnippetsLoading] = useState(true);
+  const [snippetSaving, setSnippetSaving] = useState(false);
+
+  const fetchSnippets = useCallback(async () => {
+    try {
+      const response = await fetch("/api/query/snippets");
+      if (!response.ok) return;
+      const body = (await response.json()) as { data: SavedSnippet[] };
+      setSavedSnippets(body.data);
+    } catch {
+      // Silently fail — snippets are non-critical
+    } finally {
+      setSnippetsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSnippets();
+  }, [fetchSnippets]);
 
   function toggleTable(tableName: string) {
     setExpandedTables((prev) => {
@@ -83,16 +102,28 @@ export function QueryExplorerPage() {
     }
   }
 
-  function handleSaveSnippet() {
+  async function handleSaveSnippet() {
     if (!snippetName.trim() || !queryText.trim()) return;
-    const snippet: SavedSnippet = {
-      id: `snippet-${Date.now()}`,
-      name: snippetName.trim(),
-      sql: queryText,
-      createdAt: new Date().toISOString(),
-    };
-    setSavedSnippets((prev) => [snippet, ...prev]);
-    setSnippetName("");
+    setSnippetSaving(true);
+    try {
+      const response = await fetch("/api/query/snippets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: snippetName.trim(),
+          sql: queryText,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to save snippet");
+      }
+      setSnippetName("");
+      await fetchSnippets();
+    } catch {
+      // Show inline if needed; for now snippet save errors are minor
+    } finally {
+      setSnippetSaving(false);
+    }
   }
 
   function handleLoadSnippet(snippet: SavedSnippet) {
@@ -101,8 +132,14 @@ export function QueryExplorerPage() {
     setQueryError(null);
   }
 
-  function handleDeleteSnippet(id: string) {
-    setSavedSnippets((prev) => prev.filter((s) => s.id !== id));
+  async function handleDeleteSnippet(id: string) {
+    try {
+      const response = await fetch(`/api/query/snippets/${id}`, { method: "DELETE" });
+      if (!response.ok) return;
+      await fetchSnippets();
+    } catch {
+      // Non-critical
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -213,11 +250,11 @@ export function QueryExplorerPage() {
                 <button
                   type="button"
                   onClick={handleSaveSnippet}
-                  disabled={!snippetName.trim() || !queryText.trim()}
+                  disabled={!snippetName.trim() || !queryText.trim() || snippetSaving}
                   className="flex items-center gap-2 rounded-lg bg-gray-700 px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-600 disabled:opacity-50"
                 >
                   <Save size={14} />
-                  Save
+                  {snippetSaving ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>
@@ -238,7 +275,7 @@ export function QueryExplorerPage() {
                   <span className="text-xs text-gray-500">
                     {queryResult.rowCount} row{queryResult.rowCount !== 1 ? "s" : ""}
                   </span>
-                  <span className="text-xs text-gray-500">{queryResult.executionTimeMs}ms</span>
+                  <span className="text-xs text-gray-500">{queryResult.durationMs}ms</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -287,7 +324,7 @@ export function QueryExplorerPage() {
       </div>
 
       {/* Saved snippets */}
-      {savedSnippets.length > 0 && (
+      {snippetsLoading && savedSnippets.length === 0 ? null : savedSnippets.length > 0 ? (
         <div className="rounded-xl border border-gray-700/50 bg-gray-800/50">
           <div className="flex items-center gap-2 border-b border-gray-700/50 px-4 py-3">
             <BookOpen size={15} className="text-gray-400" />
@@ -323,7 +360,7 @@ export function QueryExplorerPage() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

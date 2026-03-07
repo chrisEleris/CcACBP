@@ -1,30 +1,50 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { savedReports } from "../db/schema";
 import { type NewScheduledReport, scheduledReports } from "../db/schema-scheduled";
+import { parsePagination } from "../lib/pagination";
+
+/**
+ * Basic cron expression validation.
+ * Accepts standard 5-field cron expressions (minute hour day month weekday).
+ * Each field allows: numbers, ranges (1-5), lists (1,3,5), steps (asterisk/5), and wildcards.
+ */
+const CRON_FIELD = /^(\*|[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*)(\/[0-9]+)?$/;
+const cronExpression = z
+  .string()
+  .min(1)
+  .refine(
+    (val) => {
+      const parts = val.trim().split(/\s+/);
+      if (parts.length < 5 || parts.length > 6) return false;
+      return parts.every((part) => CRON_FIELD.test(part));
+    },
+    { message: "Invalid cron expression. Expected 5 or 6 space-separated fields." },
+  );
 
 const createScheduleSchema = z.object({
-  reportId: z.string().min(1),
-  cronExpression: z.string().min(1),
+  reportId: z.string().min(1).max(200),
+  cronExpression,
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
-  nextRunAt: z.string().optional(),
+  nextRunAt: z.string().max(100).optional(),
 });
 
 const updateScheduleSchema = z.object({
-  reportId: z.string().min(1).optional(),
-  cronExpression: z.string().min(1).optional(),
+  reportId: z.string().min(1).max(200).optional(),
+  cronExpression: cronExpression.optional(),
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
-  nextRunAt: z.string().nullable().optional(),
+  nextRunAt: z.string().max(100).nullable().optional(),
 });
 
 export const scheduledReportRoutes = new Hono()
   .get("/", async (c) => {
     try {
+      const pagination = parsePagination(c);
       const rows = await db
         .select({
           id: scheduledReports.id,
@@ -40,14 +60,24 @@ export const scheduledReportRoutes = new Hono()
         })
         .from(scheduledReports)
         .leftJoin(savedReports, eq(scheduledReports.reportId, savedReports.id))
-        .orderBy(desc(scheduledReports.createdAt));
+        .orderBy(desc(scheduledReports.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
 
       const enriched = rows.map((row) => ({
         ...row,
         reportName: row.reportName ?? null,
       }));
 
-      return c.json({ data: enriched });
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from scheduled_reports`,
+      );
+      const total = countRow?.count ?? 0;
+
+      return c.json({
+        data: enriched,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing scheduled reports:", error);
       return c.json({ message: "Failed to list scheduled reports" }, 500);
@@ -57,6 +87,16 @@ export const scheduledReportRoutes = new Hono()
   .post("/", zValidator("json", createScheduleSchema), async (c) => {
     try {
       const data = c.req.valid("json");
+
+      // Verify the referenced report exists
+      const [report] = await db
+        .select()
+        .from(savedReports)
+        .where(eq(savedReports.id, data.reportId));
+      if (!report) {
+        return c.json({ message: "Referenced report not found" }, 404);
+      }
+
       const now = new Date().toISOString();
 
       const newSchedule: NewScheduledReport = {

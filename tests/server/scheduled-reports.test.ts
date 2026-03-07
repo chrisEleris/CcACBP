@@ -159,7 +159,7 @@ describe("Scheduled Reports API routes", () => {
       const reportIdB = await createReport("Order Report B");
 
       // Small delay to guarantee distinct createdAt values
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       await createSchedule(reportIdA, "0 1 * * *");
 
       await new Promise<void>((resolve) => setTimeout(resolve, 20));
@@ -363,11 +363,51 @@ describe("Scheduled Reports API routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("returns 404 when reportId references a non-existent report", async () => {
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId: "nonexistent-report-id-that-does-not-exist",
+          cronExpression: "0 9 * * *",
+        }),
+      });
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as ErrorBody;
+      expect(body.message).toContain("report not found");
+    });
+
     it("returns 400 when reportId is an empty string", async () => {
       const res = await app.request("/api/scheduled-reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reportId: "", cronExpression: "0 9 * * *" }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression is an invalid format", async () => {
+      const reportId = await createReport("Bad Cron Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "not a valid cron",
+        }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression has too few fields", async () => {
+      const reportId = await createReport("Short Cron Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "0 9 *",
+        }),
       });
       expect(res.status).toBe(400);
     });
@@ -472,7 +512,7 @@ describe("Scheduled Reports API routes", () => {
       const originalUpdatedAt = created.data.updatedAt;
 
       // Small delay to ensure timestamp difference
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
 
       const res = await app.request(`/api/scheduled-reports/${schedId}`, {
         method: "PUT",
@@ -800,7 +840,7 @@ describe("Scheduled Reports API routes", () => {
       const schedId = created.data.id;
       const originalUpdatedAt = created.data.updatedAt;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
 
       const res = await app.request(`/api/scheduled-reports/${schedId}/run`, {
         method: "POST",
@@ -830,14 +870,14 @@ describe("Scheduled Reports API routes", () => {
       const created = await createSchedule(reportId);
       const schedId = created.data.id;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       const firstRes = await app.request(`/api/scheduled-reports/${schedId}/run`, {
         method: "POST",
       });
       const firstBody = (await firstRes.json()) as RunBody;
       const firstRunAt = firstBody.data.schedule.lastRunAt;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       const secondRes = await app.request(`/api/scheduled-reports/${schedId}/run`, {
         method: "POST",
       });
@@ -847,7 +887,9 @@ describe("Scheduled Reports API routes", () => {
       expect(firstRunAt).not.toBeNull();
       expect(secondRunAt).not.toBeNull();
       // Second run must be strictly later than first
-      expect(String(secondRunAt) > String(firstRunAt)).toBe(true);
+      expect(new Date(String(secondRunAt)).getTime()).toBeGreaterThan(
+        new Date(String(firstRunAt)).getTime(),
+      );
     });
 
     it("returns a 404 error message string for a missing id", async () => {
@@ -930,19 +972,21 @@ describe("Scheduled Reports API routes", () => {
       const created = await createSchedule(reportId, "0 0 * * *", "xlsx");
       const schedId = created.data.id;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       const runOne = await app.request(`/api/scheduled-reports/${schedId}/run`, { method: "POST" });
       const runOneBody = (await runOne.json()) as RunBody;
       const firstLastRunAt = runOneBody.data.schedule.lastRunAt;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       const runTwo = await app.request(`/api/scheduled-reports/${schedId}/run`, { method: "POST" });
       const runTwoBody = (await runTwo.json()) as RunBody;
       const secondLastRunAt = runTwoBody.data.schedule.lastRunAt;
 
       expect(firstLastRunAt).not.toBeNull();
       expect(secondLastRunAt).not.toBeNull();
-      expect(String(secondLastRunAt) > String(firstLastRunAt)).toBe(true);
+      expect(new Date(String(secondLastRunAt)).getTime()).toBeGreaterThan(
+        new Date(String(firstLastRunAt)).getTime(),
+      );
     });
 
     it("create → update reportId → verify change persists in list", async () => {

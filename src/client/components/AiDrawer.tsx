@@ -216,8 +216,10 @@ export function AiDrawer({ pageContext, isOpen, onToggle }: AiDrawerProps) {
       )}
 
       {/* Drawer panel */}
-      <div
-        className={`fixed bottom-0 right-0 top-0 z-40 flex w-96 flex-col border-l border-gray-700/50 bg-gray-900 shadow-2xl transition-transform duration-300 ease-in-out ${
+      <dialog
+        open={isOpen}
+        aria-label="AI Assistant"
+        className={`fixed bottom-0 right-0 top-0 z-40 m-0 flex h-full w-96 flex-col border-l border-gray-700/50 bg-gray-900 p-0 shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -364,7 +366,7 @@ export function AiDrawer({ pageContext, isOpen, onToggle }: AiDrawerProps) {
             </button>
           </div>
         </div>
-      </div>
+      </dialog>
     </>
   );
 }

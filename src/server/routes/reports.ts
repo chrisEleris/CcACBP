@@ -1,37 +1,55 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { reportExecutions, reportTemplates, savedReports } from "../db/schema";
+import { parsePagination } from "../lib/pagination";
+
+const MAX_NAME = 500;
+const MAX_QUERY = 50_000;
+const MAX_JSON_CONFIG = 10_000;
 
 const createReportSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  query: z.string().min(1),
+  name: z.string().min(1).max(MAX_NAME),
+  description: z.string().max(MAX_NAME).optional(),
+  query: z.string().min(1).max(MAX_QUERY),
   visualization: z.enum(["table", "bar", "line", "pie", "area", "scatter"]).optional(),
-  chartConfig: z.string().optional(),
-  layout: z.string().optional(),
-  parameters: z.string().optional(),
-  dataSourceId: z.string().optional(),
+  chartConfig: z.string().max(MAX_JSON_CONFIG).optional(),
+  layout: z.string().max(MAX_JSON_CONFIG).optional(),
+  parameters: z.string().max(MAX_JSON_CONFIG).optional(),
+  dataSourceId: z.string().max(200).optional(),
 });
 
 const updateReportSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  query: z.string().min(1).optional(),
+  name: z.string().min(1).max(MAX_NAME).optional(),
+  description: z.string().max(MAX_NAME).optional(),
+  query: z.string().min(1).max(MAX_QUERY).optional(),
   visualization: z.enum(["table", "bar", "line", "pie", "area", "scatter"]).optional(),
-  chartConfig: z.string().optional(),
-  layout: z.string().optional(),
-  parameters: z.string().optional(),
-  dataSourceId: z.string().nullable().optional(),
+  chartConfig: z.string().max(MAX_JSON_CONFIG).optional(),
+  layout: z.string().max(MAX_JSON_CONFIG).optional(),
+  parameters: z.string().max(MAX_JSON_CONFIG).optional(),
+  dataSourceId: z.string().max(200).nullable().optional(),
 });
 
 export const reportRoutes = new Hono()
   .get("/", async (c) => {
     try {
-      const all = await db.select().from(savedReports).orderBy(desc(savedReports.createdAt));
-      return c.json({ data: all });
+      const pagination = parsePagination(c);
+      const all = await db
+        .select()
+        .from(savedReports)
+        .orderBy(desc(savedReports.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from saved_reports`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: all,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing reports:", error);
       return c.json({ message: "Failed to list reports" }, 500);
@@ -40,11 +58,21 @@ export const reportRoutes = new Hono()
 
   .get("/templates/list", async (c) => {
     try {
+      const pagination = parsePagination(c);
       const templates = await db
         .select()
         .from(reportTemplates)
-        .orderBy(desc(reportTemplates.createdAt));
-      return c.json({ data: templates });
+        .orderBy(desc(reportTemplates.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from report_templates`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: templates,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing report templates:", error);
       return c.json({ message: "Failed to list report templates" }, 500);
@@ -121,7 +149,10 @@ export const reportRoutes = new Hono()
       if (!existing) {
         return c.json({ message: "Report not found" }, 404);
       }
-      await db.delete(savedReports).where(eq(savedReports.id, id));
+      await db.transaction(async (tx) => {
+        await tx.delete(reportExecutions).where(eq(reportExecutions.reportId, id));
+        await tx.delete(savedReports).where(eq(savedReports.id, id));
+      });
       return c.json({ data: { message: "Report deleted" } });
     } catch (error) {
       console.error("Error deleting report:", error);
@@ -137,6 +168,7 @@ export const reportRoutes = new Hono()
         return c.json({ message: "Report not found" }, 404);
       }
 
+      // Stub: returns simulated execution results until real query engine is wired up.
       const rowCount = Math.floor(Math.random() * 1000) + 1;
       const durationMs = Math.floor(Math.random() * 2000) + 50;
       const now = new Date().toISOString();
@@ -146,7 +178,7 @@ export const reportRoutes = new Hono()
         .values({
           id: crypto.randomUUID(),
           reportId: id,
-          status: "completed",
+          status: "mock",
           rowCount,
           durationMs,
           error: null,
@@ -170,13 +202,23 @@ export const reportRoutes = new Hono()
         return c.json({ message: "Report not found" }, 404);
       }
 
+      const pagination = parsePagination(c);
       const executions = await db
         .select()
         .from(reportExecutions)
         .where(eq(reportExecutions.reportId, id))
-        .orderBy(desc(reportExecutions.executedAt));
+        .orderBy(desc(reportExecutions.executedAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from report_executions where report_id = ${id}`,
+      );
+      const total = countRow?.count ?? 0;
 
-      return c.json({ data: executions });
+      return c.json({
+        data: executions,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing report executions:", error);
       return c.json({ message: "Failed to list executions" }, 500);

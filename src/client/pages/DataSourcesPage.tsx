@@ -1,14 +1,4 @@
-import {
-  Database,
-  FileText,
-  Globe,
-  HardDrive,
-  Plus,
-  RefreshCw,
-  Server,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Database, FileText, Globe, Plus, RefreshCw, Server, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
@@ -17,14 +7,14 @@ import { useFetch } from "../lib/use-fetch";
 
 type DataSourceStatus = "connected" | "disconnected" | "error";
 
-type DataSourceType = "postgresql" | "mysql" | "sqlite" | "csv" | "api" | "s3";
+type DataSourceType = "cloudwatch" | "redshift" | "mysql" | "s3" | "csv";
 
 type DataSource = {
   id: string;
   name: string;
   type: DataSourceType;
   status: DataSourceStatus;
-  lastTested: string | null;
+  lastTestedAt: string | null;
   config: string;
 };
 
@@ -35,12 +25,11 @@ type CreateDataSourceForm = {
 };
 
 const dataSourceTypeConfig: Record<DataSourceType, { label: string; icon: typeof Database }> = {
-  postgresql: { label: "PostgreSQL", icon: Database },
+  cloudwatch: { label: "CloudWatch", icon: Globe },
+  redshift: { label: "Redshift", icon: Database },
   mysql: { label: "MySQL", icon: Database },
-  sqlite: { label: "SQLite", icon: HardDrive },
-  csv: { label: "CSV File", icon: FileText },
-  api: { label: "REST API", icon: Globe },
   s3: { label: "Amazon S3", icon: Server },
+  csv: { label: "CSV File", icon: FileText },
 };
 
 const statusConfig: Record<DataSourceStatus, { label: string; className: string }> = {
@@ -58,11 +47,11 @@ const statusConfig: Record<DataSourceStatus, { label: string; className: string 
   },
 };
 
-const DATA_SOURCE_TYPES: DataSourceType[] = ["postgresql", "mysql", "sqlite", "csv", "api", "s3"];
+const DATA_SOURCE_TYPES: DataSourceType[] = ["cloudwatch", "redshift", "mysql", "s3", "csv"];
 
 const DEFAULT_FORM: CreateDataSourceForm = {
   name: "",
-  type: "postgresql",
+  type: "cloudwatch",
   config: "",
 };
 
@@ -117,8 +106,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
-      setActionError("Failed to test connection. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to test connection.");
     } finally {
       setTestingId(null);
     }
@@ -134,8 +122,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
-      setActionError("Failed to delete. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to delete.");
     } finally {
       setDeletingId(null);
     }
@@ -210,7 +197,8 @@ export function DataSourcesPage() {
 
                 {/* Last tested */}
                 <p className="mt-4 text-xs text-gray-500">
-                  Last tested: <span className="text-gray-400">{source.lastTested ?? "Never"}</span>
+                  Last tested:{" "}
+                  <span className="text-gray-400">{source.lastTestedAt ?? "Never"}</span>
                 </p>
 
                 {/* Actions */}
@@ -245,9 +233,10 @@ export function DataSourcesPage() {
 
       {/* Create Modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <dialog
+          open
           aria-labelledby="datasource-modal-title"
+          className="fixed inset-0 z-50 m-0 flex h-full w-full items-center justify-center border-none bg-transparent p-4"
           onKeyDown={(e) => {
             if (e.key === "Escape") handleCloseModal();
           }}
@@ -362,7 +351,7 @@ export function DataSourcesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

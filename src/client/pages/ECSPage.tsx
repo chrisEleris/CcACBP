@@ -33,19 +33,9 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
 import { useFetch } from "../lib/use-fetch";
+import { timeAgo } from "../utils/time";
 
 // ── Helpers ───────────────────────────────────────────────
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 function taskStatusColor(status: ECSTaskStatus): string {
   const map: Record<ECSTaskStatus, string> = {
@@ -180,14 +170,17 @@ function ClusterCard({
 function ServiceTasksDetail({
   service,
   clusterName,
+  taskFilter,
 }: {
   service: ECSService;
   clusterName: string;
+  taskFilter: "all" | ECSTaskStatus;
 }) {
   const { data: tasksData, loading } = useFetch<ECSTask[]>(
     `/api/ecs/tasks/${clusterName}/${service.name}`,
   );
-  const tasks = tasksData ?? [];
+  const allTasks = tasksData ?? [];
+  const tasks = taskFilter === "all" ? allTasks : allTasks.filter((t) => t.status === taskFilter);
 
   return (
     <div className="space-y-4">
@@ -277,7 +270,12 @@ function ServiceTasksDetail({
       {(loading || tasks.length > 0) && (
         <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Tasks {loading ? "" : `(${tasks.length})`}
+            Tasks{" "}
+            {loading
+              ? ""
+              : taskFilter === "all"
+                ? `(${tasks.length})`
+                : `(${tasks.length}/${allTasks.length})`}
           </h4>
           {loading ? (
             <p className="py-4 text-center text-xs text-gray-600">Loading tasks...</p>
@@ -351,11 +349,13 @@ function ServiceRow({
   clusterName,
   isExpanded,
   onToggle,
+  taskFilter,
 }: {
   service: ECSService;
   clusterName: string;
   isExpanded: boolean;
   onToggle: () => void;
+  taskFilter: "all" | ECSTaskStatus;
 }) {
   const countMismatch = service.desiredCount !== service.runningCount;
   const primaryDeployment = service.deployments.find((d) => d.status === "PRIMARY");
@@ -364,6 +364,7 @@ function ServiceRow({
     <Fragment>
       <tr
         className="cursor-pointer border-b border-gray-700/30 transition-colors hover:bg-white/[0.02]"
+        tabIndex={0}
         onClick={onToggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -459,7 +460,11 @@ function ServiceRow({
       {isExpanded && (
         <tr className="border-b border-gray-700/30 bg-gray-900/40">
           <td colSpan={8} className="px-4 py-4">
-            <ServiceTasksDetail service={service} clusterName={clusterName} />
+            <ServiceTasksDetail
+              service={service}
+              clusterName={clusterName}
+              taskFilter={taskFilter}
+            />
           </td>
         </tr>
       )}
@@ -644,6 +649,7 @@ function ECSClusterView({
                   clusterName={selectedCluster}
                   isExpanded={expandedService === svc.name}
                   onToggle={() => onToggleService(svc.name)}
+                  taskFilter={taskFilter}
                 />
               ))}
             </tbody>

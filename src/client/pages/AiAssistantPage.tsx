@@ -72,6 +72,26 @@ export function AiAssistantPage() {
   const [isAgentDropdownOpen, setIsAgentDropdownOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on Escape or click outside
+  useEffect(() => {
+    if (!isAgentDropdownOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsAgentDropdownOpen(false);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsAgentDropdownOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAgentDropdownOpen]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when messages change
   useEffect(() => {
@@ -236,10 +256,12 @@ export function AiAssistantPage() {
           </div>
 
           {/* Agent type selector */}
-          <div className="relative">
+          <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setIsAgentDropdownOpen((prev) => !prev)}
+              aria-expanded={isAgentDropdownOpen}
+              aria-haspopup="listbox"
               className="flex items-center gap-2 rounded-lg bg-gray-700/50 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700"
             >
               <Bot size={14} />
@@ -248,7 +270,10 @@ export function AiAssistantPage() {
             </button>
 
             {isAgentDropdownOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-gray-700 bg-gray-900 py-1 shadow-xl">
+              <div
+                aria-label="Select AI agent"
+                className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-gray-700 bg-gray-900 py-1 shadow-xl"
+              >
                 {agentOptions.map((opt) => (
                   <button
                     key={opt.type}

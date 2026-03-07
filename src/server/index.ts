@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { config } from "./config";
@@ -20,13 +21,23 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: config.NODE_ENV === "production" ? "https://chrisEleris.github.io" : "*",
+    origin:
+      config.NODE_ENV === "production"
+        ? "https://chrisEleris.github.io"
+        : ["http://localhost:5173", "http://localhost:4173", "http://localhost:3000"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
     maxAge: 86400,
   }),
 );
 app.use("*", secureHeaders());
+app.use(
+  "/api/*",
+  bodyLimit({
+    maxSize: 1024 * 1024,
+    onError: (c) => c.json({ message: "Request body too large" }, 413),
+  }),
+);
 app.use("/api/*", apiKeyAuth);
 
 app.route("/api", healthRoute);
