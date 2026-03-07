@@ -82,4 +82,79 @@ describe("Data Source API routes", () => {
     const getRes = await app.request(`/api/data-sources/${id}`);
     expect(getRes.status).toBe(404);
   });
+
+  it("GET /api/data-sources/:id returns an existing data source", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Get By ID Source",
+        type: "redshift",
+        config: JSON.stringify({ host: "redshift.example.com", port: 5439 }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const getRes = await app.request(`/api/data-sources/${id}`);
+    expect(getRes.status).toBe(200);
+    const body = await getRes.json();
+    expect(body.data.id).toBe(id);
+    expect(body.data.name).toBe("Get By ID Source");
+    expect(body.data.type).toBe("redshift");
+  });
+
+  it("PUT /api/data-sources/:id updates an existing data source", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Original Name",
+        type: "csv",
+        config: JSON.stringify({ path: "/data/file.csv" }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const updateRes = await app.request(`/api/data-sources/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Updated Name" }),
+    });
+    expect(updateRes.status).toBe(200);
+    const body = await updateRes.json();
+    expect(body.data.id).toBe(id);
+    expect(body.data.name).toBe("Updated Name");
+    expect(body.data.type).toBe("csv");
+  });
+
+  it("PUT /api/data-sources/:id returns 404 for non-existent data source", async () => {
+    const res = await app.request("/api/data-sources/non-existent-id", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Ghost Update" }),
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Data source not found");
+  });
+
+  it("POST /api/data-sources/:id/test returns 404 for non-existent data source", async () => {
+    const res = await app.request("/api/data-sources/non-existent-id/test", {
+      method: "POST",
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Data source not found");
+  });
+
+  it("DELETE /api/data-sources/:id returns 404 for non-existent data source", async () => {
+    const res = await app.request("/api/data-sources/non-existent-id", {
+      method: "DELETE",
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Data source not found");
+  });
 });

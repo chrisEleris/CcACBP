@@ -30,7 +30,7 @@ import {
 
 const region = config.AWS_REGION;
 
-function getMonthAbbr(date: Date): string {
+export function getMonthAbbr(date: Date): string {
   return date.toLocaleString("en-US", { month: "short" });
 }
 

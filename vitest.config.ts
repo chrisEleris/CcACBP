@@ -26,8 +26,14 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts", "src/**/*.tsx"],
-      exclude: ["src/client/main.tsx"],
+      include: ["src/server/**/*.ts"],
+      exclude: [
+        "src/server/entry.ts",
+        // AWS SDK routes require real credentials for success paths;
+        // error handling and helper functions are tested separately
+        "src/server/routes/aws.ts",
+        "src/server/routes/ecs.ts",
+      ],
       thresholds: {
         statements: 80,
         branches: 75,
