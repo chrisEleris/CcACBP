@@ -1,7 +1,10 @@
 import { DescribeAlarmsCommand } from "@aws-sdk/client-cloudwatch";
 import { GetCostAndUsageCommand } from "@aws-sdk/client-cost-explorer";
-import { DescribeInstancesCommand } from "@aws-sdk/client-ec2";
-import { DescribeSubnetsCommand, DescribeVpcsCommand } from "@aws-sdk/client-ec2";
+import {
+  DescribeInstancesCommand,
+  DescribeSubnetsCommand,
+  DescribeVpcsCommand,
+} from "@aws-sdk/client-ec2";
 import { ListUsersCommand } from "@aws-sdk/client-iam";
 import { ListFunctionsCommand } from "@aws-sdk/client-lambda";
 import { ListBucketsCommand } from "@aws-sdk/client-s3";
@@ -23,7 +26,6 @@ import {
   iamClient,
   lambdaClient,
   s3Client,
-  ec2Client as vpcClient,
 } from "../services/aws-clients";
 
 const region = config.AWS_REGION;
@@ -170,8 +172,8 @@ export const awsRoutes = new Hono()
   .get("/vpc/list", async (c) => {
     try {
       const [vpcsResponse, subnetsResponse] = await Promise.all([
-        vpcClient.send(new DescribeVpcsCommand({})),
-        vpcClient.send(new DescribeSubnetsCommand({})),
+        ec2Client.send(new DescribeVpcsCommand({})),
+        ec2Client.send(new DescribeSubnetsCommand({})),
       ]);
 
       const subnetsByVpc = new Map<string, number>();

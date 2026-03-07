@@ -136,6 +136,7 @@ export const queryRoutes = new Hono()
     try {
       const _validated = c.req.valid("json");
 
+      // TODO: Replace with actual query execution against the configured data source
       return c.json({
         data: {
           columns: ["id", "name", "value"],

@@ -32,19 +32,22 @@ type Report = {
   id: string;
   name: string;
   description: string;
-  sql: string;
-  dataSourceId: string;
-  visualizationType: VisualizationType;
-  lastRunAt: string | null;
+  query: string;
+  dataSourceId: string | null;
+  visualization: VisualizationType;
+  chartConfig: string;
+  layout: string;
+  parameters: string;
   createdAt: string;
+  updatedAt: string;
 };
 
 type ReportFormState = {
   name: string;
   description: string;
-  sql: string;
+  query: string;
   dataSourceId: string;
-  visualizationType: VisualizationType;
+  visualization: VisualizationType;
 };
 
 type PreviewResultRow = Record<string, string | number | boolean | null>;
@@ -57,9 +60,9 @@ type PreviewResult = {
 const DEFAULT_FORM: ReportFormState = {
   name: "",
   description: "",
-  sql: "SELECT * FROM users LIMIT 100;",
+  query: "SELECT * FROM users LIMIT 100;",
   dataSourceId: "",
-  visualizationType: "table",
+  visualization: "table",
 };
 
 const vizOptions: { type: VisualizationType; label: string; icon: typeof Table }[] = [
@@ -97,7 +100,7 @@ export function ReportBuilderPage() {
   }
 
   async function handlePreview() {
-    if (!form.sql.trim()) return;
+    if (!form.query.trim()) return;
     setIsPreviewing(true);
     setPreviewError(null);
     setPreviewResult(null);
@@ -105,7 +108,7 @@ export function ReportBuilderPage() {
       const response = await fetch("/api/query/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql: form.sql, dataSourceId: form.dataSourceId || undefined }),
+        body: JSON.stringify({ sql: form.query, dataSourceId: form.dataSourceId || null }),
       });
       if (!response.ok) {
         const body = (await response.json()) as { message?: string };
@@ -125,7 +128,7 @@ export function ReportBuilderPage() {
       setSaveError("Report name is required");
       return;
     }
-    if (!form.sql.trim()) {
+    if (!form.query.trim()) {
       setSaveError("SQL query is required");
       return;
     }
@@ -137,7 +140,13 @@ export function ReportBuilderPage() {
       const response = await fetch(path, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          query: form.query,
+          visualization: form.visualization,
+          dataSourceId: form.dataSourceId || undefined,
+        }),
       });
       if (!response.ok) {
         throw new Error(`Failed to save: ${response.statusText}`);
@@ -158,9 +167,9 @@ export function ReportBuilderPage() {
     setForm({
       name: report.name,
       description: report.description,
-      sql: report.sql,
-      dataSourceId: report.dataSourceId,
-      visualizationType: report.visualizationType,
+      query: report.query,
+      dataSourceId: report.dataSourceId ?? "",
+      visualization: report.visualization,
     });
     setPreviewResult(null);
     setPreviewError(null);
@@ -296,8 +305,8 @@ export function ReportBuilderPage() {
             </label>
             <textarea
               id="report-sql"
-              value={form.sql}
-              onChange={(e) => handleFormChange("sql", e.target.value)}
+              value={form.query}
+              onChange={(e) => handleFormChange("query", e.target.value)}
               rows={6}
               spellCheck={false}
               placeholder="SELECT * FROM users WHERE created_at > NOW() - INTERVAL '30 days';"
@@ -313,9 +322,9 @@ export function ReportBuilderPage() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => handleFormChange("visualizationType", type)}
+                  onClick={() => handleFormChange("visualization", type)}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                    form.visualizationType === type
+                    form.visualization === type
                       ? "border-blue-500 bg-blue-500/10 text-blue-400"
                       : "border-gray-700 bg-gray-900/40 text-gray-400 hover:border-gray-600 hover:text-gray-300"
                   }`}
@@ -335,7 +344,7 @@ export function ReportBuilderPage() {
           <button
             type="button"
             onClick={handlePreview}
-            disabled={isPreviewing || !form.sql.trim()}
+            disabled={isPreviewing || !form.query.trim()}
             className="flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-600 disabled:opacity-50"
           >
             <Play size={14} />
@@ -394,7 +403,7 @@ export function ReportBuilderPage() {
         {savedReports.length > 0 && (
           <div className="space-y-3">
             {savedReports.map((report) => {
-              const vizOpt = vizOptions.find((v) => v.type === report.visualizationType);
+              const vizOpt = vizOptions.find((v) => v.type === report.visualization);
               const VizIcon = vizOpt?.icon ?? Table;
 
               return (
@@ -411,12 +420,15 @@ export function ReportBuilderPage() {
                       <p className="mt-0.5 truncate text-xs text-gray-500">{report.description}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-600">
-                      Last run: <span className="text-gray-500">{report.lastRunAt ?? "Never"}</span>
+                      Updated:{" "}
+                      <span className="text-gray-500">
+                        {new Date(report.updatedAt).toLocaleDateString()}
+                      </span>
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="hidden rounded-full bg-gray-700/50 px-2.5 py-1 text-xs text-gray-400 sm:inline-flex">
-                      {vizOpt?.label ?? report.visualizationType}
+                      {vizOpt?.label ?? report.visualization}
                     </span>
                     <button
                       type="button"
