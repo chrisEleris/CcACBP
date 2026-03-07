@@ -215,6 +215,84 @@ describe("Data Source API routes", () => {
     expect(config.apiKey).toBe("***REDACTED***");
   });
 
+  it("POST /api/data-sources redacts sensitive config fields in create response", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Create Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          password: "my-secret-pass",
+          accessKey: "AKIA12345",
+        }),
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.password).toBe("***REDACTED***");
+    expect(config.accessKey).toBe("***REDACTED***");
+  });
+
+  it("PUT /api/data-sources/:id redacts sensitive config fields in update response", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Update Redaction Test",
+        type: "s3",
+        config: JSON.stringify({ bucket: "test" }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const updateRes = await app.request(`/api/data-sources/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: JSON.stringify({
+          bucket: "updated-bucket",
+          secretKey: "super-secret",
+        }),
+      }),
+    });
+    expect(updateRes.status).toBe(200);
+    const body = await updateRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.bucket).toBe("updated-bucket");
+    expect(config.secretKey).toBe("***REDACTED***");
+  });
+
+  it("POST /api/data-sources/:id/test redacts sensitive config fields in response", async () => {
+    const createRes = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Test Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          credentials: "secret-creds",
+        }),
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const testRes = await app.request(`/api/data-sources/${id}/test`, {
+      method: "POST",
+    });
+    expect(testRes.status).toBe(200);
+    const body = await testRes.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.credentials).toBe("***REDACTED***");
+  });
+
   it("GET /api/data-sources/:id redacts sensitive config fields", async () => {
     const createRes = await app.request("/api/data-sources", {
       method: "POST",

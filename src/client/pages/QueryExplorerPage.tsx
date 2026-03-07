@@ -7,7 +7,6 @@ import { useFetch } from "../lib/use-fetch";
 type SchemaColumn = {
   name: string;
   type: string;
-  nullable: boolean;
 };
 
 type SchemaTable = {

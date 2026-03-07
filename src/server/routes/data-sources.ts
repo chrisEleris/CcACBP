@@ -100,7 +100,7 @@ export const dataSourceRoutes = new Hono()
           updatedAt: now,
         })
         .returning();
-      return c.json({ data: created }, 201);
+      return c.json({ data: redactDataSource(created) }, 201);
     } catch (error) {
       console.error("Error creating data source:", error);
       return c.json({ message: "Failed to create data source" }, 500);
@@ -122,7 +122,7 @@ export const dataSourceRoutes = new Hono()
         .set({ ...data, updatedAt: new Date().toISOString() })
         .where(eq(dataSources.id, id))
         .returning();
-      return c.json({ data: updated });
+      return c.json({ data: redactDataSource(updated) });
     } catch (error) {
       console.error("Error updating data source:", error);
       return c.json({ message: "Failed to update data source" }, 500);
@@ -159,7 +159,7 @@ export const dataSourceRoutes = new Hono()
         .where(eq(dataSources.id, id))
         .returning();
 
-      return c.json({ data: updated });
+      return c.json({ data: redactDataSource(updated) });
     } catch (error) {
       console.error("Error testing data source connection:", error);
       return c.json({ message: "Failed to test connection" }, 500);
