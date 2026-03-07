@@ -12,7 +12,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { DataTable } from "../components/DataTable";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -29,30 +28,25 @@ type ReportDetail = {
   id: string;
   name: string;
   description: string;
-  visualizationType: VisualizationType;
-  dataSourceName: string;
-  sql: string;
-  lastRunAt: string | null;
+  query: string;
+  dataSourceId: string | null;
+  visualization: VisualizationType;
+  chartConfig: string;
+  layout: string;
+  parameters: string;
   createdAt: string;
+  updatedAt: string;
 };
 
 type ExecutionRecord = {
   id: string;
-  startedAt: string;
-  completedAt: string | null;
-  status: "success" | "failed" | "running";
+  reportId: string;
+  status: "running" | "completed" | "failed";
   rowCount: number | null;
   durationMs: number | null;
-  errorMessage: string | null;
-};
-
-type ResultRow = Record<string, string | number | boolean | null>;
-
-type RunResult = {
-  columns: string[];
-  rows: ResultRow[];
-  rowCount: number;
-  executionTimeMs: number;
+  error: string | null;
+  resultPath: string | null;
+  executedAt: string;
 };
 
 const vizLabelMap: Record<VisualizationType, { label: string; icon: typeof Table }> = {
@@ -68,8 +62,8 @@ const executionStatusConfig: Record<
   ExecutionRecord["status"],
   { label: string; className: string }
 > = {
-  success: {
-    label: "Success",
+  completed: {
+    label: "Completed",
     className: "bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20",
   },
   failed: {
@@ -98,23 +92,23 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
   } = useFetch<ExecutionRecord[]>(`/api/reports/${reportId}/executions`);
 
   const [isRunning, setIsRunning] = useState(false);
-  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [lastExecution, setLastExecution] = useState<ExecutionRecord | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
 
   async function handleRun() {
     setIsRunning(true);
     setRunError(null);
-    setRunResult(null);
+    setLastExecution(null);
     try {
-      const response = await fetch(`/api/reports/${reportId}/run`, {
+      const response = await fetch(`/api/reports/${reportId}/execute`, {
         method: "POST",
       });
       if (!response.ok) {
         const body = (await response.json()) as { message?: string };
         throw new Error(body.message ?? `Execution failed: ${response.statusText}`);
       }
-      const body = (await response.json()) as { data: RunResult };
-      setRunResult(body.data);
+      const body = (await response.json()) as { data: ExecutionRecord };
+      setLastExecution(body.data);
       refetchExecutions();
       refetchReport();
     } catch (err) {
@@ -128,27 +122,9 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
   if (reportError) return <ErrorState message={reportError} onRetry={refetchReport} />;
   if (!report) return <EmptyState message="Report not found" />;
 
-  const vizConfig = vizLabelMap[report.visualizationType];
+  const vizConfig = vizLabelMap[report.visualization];
   const VizIcon = vizConfig.icon;
   const executionList = executions ?? [];
-
-  type IndexedResultRow = ResultRow & { _rowKey: string };
-  const indexedResultRows: IndexedResultRow[] = runResult
-    ? runResult.rows.map((row, idx) => ({ ...row, _rowKey: String(idx) }))
-    : [];
-
-  const resultColumns = runResult
-    ? runResult.columns.map((col) => ({
-        key: col,
-        header: col,
-        render: (row: IndexedResultRow) =>
-          row[col] === null ? (
-            <span className="text-gray-600">NULL</span>
-          ) : (
-            <span className="font-mono text-xs">{String(row[col])}</span>
-          ),
-      }))
-    : [];
 
   return (
     <div className="space-y-6">
@@ -192,16 +168,26 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
           <Database size={18} className="shrink-0 text-purple-400" />
           <div>
             <p className="text-xs text-gray-500">Data Source</p>
-            <p className="text-sm font-medium text-white">{report.dataSourceName}</p>
+            <p className="text-sm font-medium text-white">{report.dataSourceId ?? "Default"}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-gray-700/50 bg-gray-800/50 px-4 py-3">
           <Clock size={18} className="shrink-0 text-gray-400" />
           <div>
-            <p className="text-xs text-gray-500">Last Run</p>
-            <p className="text-sm font-medium text-white">{report.lastRunAt ?? "Never"}</p>
+            <p className="text-xs text-gray-500">Created</p>
+            <p className="text-sm font-medium text-white">
+              {new Date(report.createdAt).toLocaleDateString()}
+            </p>
           </div>
         </div>
+      </div>
+
+      {/* SQL Query */}
+      <div className="rounded-xl border border-gray-700/50 bg-gray-800/50 p-4">
+        <p className="mb-2 text-xs font-medium tracking-wider text-gray-500 uppercase">SQL Query</p>
+        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-gray-300">
+          {report.query}
+        </pre>
       </div>
 
       {/* Run error */}
@@ -211,27 +197,13 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
         </div>
       )}
 
-      {/* Run results */}
-      {runResult && (
-        <div className="rounded-xl border border-gray-700/50 bg-gray-800/50">
-          <div className="flex items-center justify-between border-b border-gray-700/50 px-4 py-3">
-            <span className="text-sm font-medium text-gray-300">Results</span>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span>{runResult.rowCount} rows</span>
-              <span>{runResult.executionTimeMs}ms</span>
-            </div>
-          </div>
-          <div className="p-4">
-            {indexedResultRows.length === 0 ? (
-              <EmptyState message="Report returned no data" />
-            ) : (
-              <DataTable
-                data={indexedResultRows}
-                columns={resultColumns}
-                keyExtractor={(row) => row._rowKey}
-              />
-            )}
-          </div>
+      {/* Last execution result */}
+      {lastExecution && (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <p className="text-sm text-emerald-400">
+            Execution {lastExecution.status} — {lastExecution.rowCount ?? 0} rows in{" "}
+            {lastExecution.durationMs ?? 0}ms
+          </p>
         </div>
       )}
 
@@ -259,7 +231,7 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
                     </span>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400">
                       <Calendar size={12} />
-                      {exec.startedAt}
+                      {new Date(exec.executedAt).toLocaleString()}
                     </div>
                     {exec.durationMs !== null && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -270,8 +242,8 @@ export function ReportViewerPage({ reportId, onBack }: Props) {
                     {exec.rowCount !== null && (
                       <span className="text-xs text-gray-500">{exec.rowCount} rows</span>
                     )}
-                    {exec.errorMessage && (
-                      <span className="truncate text-xs text-red-400">{exec.errorMessage}</span>
+                    {exec.error && (
+                      <span className="truncate text-xs text-red-400">{exec.error}</span>
                     )}
                   </div>
                 );
