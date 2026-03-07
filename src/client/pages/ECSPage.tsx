@@ -148,7 +148,7 @@ function ClusterCard({
           <Layers size={16} className="text-blue-400" />
           <span className="text-sm font-semibold text-white">{cluster.name}</span>
         </div>
-        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
+        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
           {cluster.status}
         </span>
       </div>
@@ -214,7 +214,7 @@ function ServiceTasksDetail({
                 key={p.policyName}
                 className="flex flex-wrap items-center gap-2 text-xs text-gray-400"
               >
-                <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-300">
+                <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-xs text-gray-300">
                   {p.metricType}
                 </span>
                 <span>Target: {p.targetValue}%</span>
@@ -241,7 +241,7 @@ function ServiceTasksDetail({
             {service.deployments.map((d) => (
               <div key={d.id} className="flex flex-wrap items-center gap-3 text-xs">
                 <span
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                  className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                     d.status === "PRIMARY"
                       ? "bg-blue-500/10 text-blue-400"
                       : d.status === "ACTIVE"
@@ -256,7 +256,7 @@ function ServiceTasksDetail({
                   {d.runningCount}/{d.desiredCount} running
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${
+                  className={`rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${
                     d.rolloutState === "COMPLETED"
                       ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
                       : d.rolloutState === "IN_PROGRESS"
@@ -290,7 +290,7 @@ function ServiceTasksDetail({
                 >
                   <span className="font-mono text-gray-300">{task.taskId}</span>
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${taskStatusColor(task.status)}`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${taskStatusColor(task.status)}`}
                   >
                     <span className="h-1 w-1 rounded-full bg-current" />
                     {task.status}
@@ -305,9 +305,7 @@ function ServiceTasksDetail({
                   </span>
                   <span className="hidden text-gray-600 sm:inline">{task.privateIp}</span>
                   {task.stoppedReason && (
-                    <span className="basis-full text-[10px] text-red-400">
-                      {task.stoppedReason}
-                    </span>
+                    <span className="basis-full text-xs text-red-400">{task.stoppedReason}</span>
                   )}
                   <div className="ml-auto flex gap-1">
                     {task.status === "RUNNING" && (
@@ -384,7 +382,7 @@ function ServiceRow({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="truncate text-sm font-medium text-white">{service.name}</span>
-                <span className="shrink-0 rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-400">
+                <span className="shrink-0 rounded bg-gray-700/50 px-1.5 py-0.5 text-xs text-gray-400">
                   {service.launchType}
                 </span>
               </div>
@@ -422,7 +420,7 @@ function ServiceRow({
         <td className="hidden px-4 py-3 lg:table-cell">
           {primaryDeployment && (
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                 primaryDeployment.rolloutState === "COMPLETED"
                   ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
                   : primaryDeployment.rolloutState === "IN_PROGRESS"
@@ -666,7 +664,7 @@ function ECSClusterView({
               <button
                 type="button"
                 onClick={() => onSetTaskFilter("all")}
-                className={`rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
+                className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
                   taskFilter === "all"
                     ? "bg-gray-600 text-white"
                     : "text-gray-500 hover:text-gray-300"
@@ -679,7 +677,7 @@ function ECSClusterView({
                   key={status}
                   type="button"
                   onClick={() => onSetTaskFilter(status)}
-                  className={`rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
+                  className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
                     taskFilter === status
                       ? "bg-gray-600 text-white"
                       : "text-gray-500 hover:text-gray-300"
@@ -723,7 +721,7 @@ function ECSClusterView({
                   <div className="min-w-0">
                     <div className="mb-0.5 flex flex-wrap items-center gap-2">
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${eventTypeBadgeColor(evt.type)}`}
+                        className={`rounded px-1.5 py-0.5 text-xs font-medium ${eventTypeBadgeColor(evt.type)}`}
                       >
                         {evt.type}
                       </span>

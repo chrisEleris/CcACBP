@@ -146,18 +146,18 @@ function EnvironmentCard({ state }: { state: EnvironmentState }) {
     <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
       <div className="mb-2 flex items-center justify-between">
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ring-inset ${envColor(state.env)}`}
+          className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ring-1 ring-inset ${envColor(state.env)}`}
         >
           {state.env}
         </span>
         <div className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${healthDot(state.health)}`} />
-          <span className="text-[10px] text-gray-500">{state.health}</span>
+          <span className="text-xs text-gray-500">{state.health}</span>
         </div>
       </div>
       <p className="text-sm font-semibold text-white">{state.currentVersion}</p>
-      <p className="mb-2 font-mono text-[10px] text-gray-600">{state.imageTag}</p>
-      <div className="space-y-0.5 text-[10px] text-gray-500">
+      <p className="mb-2 font-mono text-xs text-gray-600">{state.imageTag}</p>
+      <div className="space-y-0.5 text-xs text-gray-500">
         <div>
           Tasks: <span className="text-gray-400">{state.taskCount}</span>
         </div>
@@ -179,7 +179,7 @@ function PipelineStageVisualization({ pipeline }: { pipeline: DeployPipeline }) 
         <Fragment key={stage.name}>
           {i > 0 && <ArrowRight size={10} className="hidden shrink-0 text-gray-700 sm:block" />}
           <div
-            className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium ${statusBadgeColor(stage.status)}`}
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium ${statusBadgeColor(stage.status)}`}
             title={stage.notes ?? stage.name}
           >
             <span className="shrink-0">{statusIcon(stage.status)}</span>
@@ -225,24 +225,24 @@ function PipelineRow({
                 <span className="font-mono text-xs text-gray-400">{pipeline.version}</span>
                 <ArrowRight size={12} className="text-gray-600" />
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ring-inset ${envColor(pipeline.currentEnv)}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ring-1 ring-inset ${envColor(pipeline.currentEnv)}`}
                 >
                   {pipeline.currentEnv}
                 </span>
               </div>
-              <p className="mt-0.5 text-[10px] text-gray-600">
+              <p className="mt-0.5 text-xs text-gray-600">
                 {pipeline.triggeredBy} · {timeAgo(pipeline.triggeredAt)}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span
-              className={`rounded px-2 py-0.5 text-[10px] font-medium ${strategyBadge(pipeline.strategy)}`}
+              className={`rounded px-2 py-0.5 text-xs font-medium ${strategyBadge(pipeline.strategy)}`}
             >
               {pipeline.strategy}
             </span>
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${statusBadgeColor(pipeline.status)}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${statusBadgeColor(pipeline.status)}`}
             >
               {statusIcon(pipeline.status)}
               {pipeline.status.replace("_", " ")}
@@ -264,7 +264,7 @@ function PipelineRow({
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <span className="text-[10px] tabular-nums text-gray-500">{progressPct}%</span>
+          <span className="text-xs tabular-nums text-gray-500">{progressPct}%</span>
         </div>
 
         {/* Stage visualization (compact) */}
@@ -289,17 +289,17 @@ function PipelineRow({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-gray-300">{stage.name}</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] ring-1 ring-inset ${statusBadgeColor(stage.status)}`}
+                      className={`rounded-full px-1.5 py-0.5 text-xs ring-1 ring-inset ${statusBadgeColor(stage.status)}`}
                     >
                       {stage.status.replace("_", " ")}
                     </span>
                     {stage.approver && (
-                      <span className="text-[10px] text-gray-600">by {stage.approver}</span>
+                      <span className="text-xs text-gray-600">by {stage.approver}</span>
                     )}
                   </div>
-                  {stage.notes && <p className="mt-0.5 text-[10px] text-gray-500">{stage.notes}</p>}
+                  {stage.notes && <p className="mt-0.5 text-xs text-gray-500">{stage.notes}</p>}
                   {stage.startedAt && (
-                    <p className="mt-0.5 text-[10px] text-gray-600">
+                    <p className="mt-0.5 text-xs text-gray-600">
                       {formatDate(stage.startedAt)}
                       {stage.completedAt && ` → ${formatDate(stage.completedAt)}`}
                     </p>
@@ -337,9 +337,9 @@ function PipelineRow({
                       }`}
                     />
                     <span className="text-gray-300">{hc.name}</span>
-                    <span className="font-mono text-[10px] text-gray-600">{hc.endpoint}</span>
+                    <span className="font-mono text-xs text-gray-600">{hc.endpoint}</span>
                     {hc.responseTime !== null && (
-                      <span className="text-[10px] text-gray-500">{hc.responseTime}ms</span>
+                      <span className="text-xs text-gray-500">{hc.responseTime}ms</span>
                     )}
                   </div>
                 ))}
@@ -498,7 +498,7 @@ export function DeploymentsPage() {
             >
               {tab.label}
               {tab.count !== undefined && (
-                <span className="rounded-full bg-gray-700/50 px-1.5 py-0.5 text-[10px]">
+                <span className="rounded-full bg-gray-700/50 px-1.5 py-0.5 text-xs">
                   {tab.count}
                 </span>
               )}
@@ -514,7 +514,7 @@ export function DeploymentsPage() {
               <button
                 type="button"
                 onClick={() => setServiceFilter("all")}
-                className={`rounded-lg px-2 py-1 text-[10px] font-medium ${
+                className={`rounded-lg px-2 py-1 text-xs font-medium ${
                   serviceFilter === "all"
                     ? "bg-gray-600 text-white"
                     : "text-gray-500 hover:text-gray-300"
@@ -527,7 +527,7 @@ export function DeploymentsPage() {
                   key={svc}
                   type="button"
                   onClick={() => setServiceFilter(svc)}
-                  className={`rounded-lg px-2 py-1 text-[10px] font-medium ${
+                  className={`rounded-lg px-2 py-1 text-xs font-medium ${
                     serviceFilter === svc
                       ? "bg-gray-600 text-white"
                       : "text-gray-500 hover:text-gray-300"
@@ -587,7 +587,7 @@ export function DeploymentsPage() {
                             {state ? (
                               <EnvironmentCard state={state} />
                             ) : (
-                              <div className="rounded-lg border border-dashed border-gray-700/30 p-3 text-center text-[10px] text-gray-600">
+                              <div className="rounded-lg border border-dashed border-gray-700/30 p-3 text-center text-xs text-gray-600">
                                 Not deployed
                               </div>
                             )}
@@ -637,12 +637,12 @@ export function DeploymentsPage() {
                     <RotateCcw size={14} className="text-orange-400" />
                     <span className="text-sm font-medium text-white">{rb.service}</span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ring-inset ${envColor(rb.env)}`}
+                      className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ring-1 ring-inset ${envColor(rb.env)}`}
                     >
                       {rb.env}
                     </span>
                     <span
-                      className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+                      className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                         rb.status === "COMPLETED"
                           ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
                           : rb.status === "IN_PROGRESS"
@@ -659,7 +659,7 @@ export function DeploymentsPage() {
                     <span className="font-mono text-emerald-400">{rb.toVersion}</span>
                   </div>
                   <p className="mb-1 text-xs text-gray-400">{rb.reason}</p>
-                  <div className="flex flex-wrap gap-3 text-[10px] text-gray-600">
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                     <span>By: {rb.initiatedBy}</span>
                     <span>{formatDate(rb.initiatedAt)}</span>
                     {rb.completedAt && <span>Took: {timeAgo(rb.completedAt)}</span>}
@@ -696,19 +696,19 @@ function ScheduleRow({ schedule }: { schedule: DeploySchedule }) {
           <span className="font-mono text-xs text-gray-400">{schedule.version}</span>
           <ArrowRight size={10} className="text-gray-600" />
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ring-inset ${envColor(schedule.targetEnv)}`}
+            className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ring-1 ring-inset ${envColor(schedule.targetEnv)}`}
           >
             {schedule.targetEnv}
           </span>
         </div>
-        <div className="mt-0.5 flex flex-wrap gap-3 text-[10px] text-gray-500">
+        <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-gray-500">
           <span>{formatDate(schedule.scheduledFor)}</span>
           <span>Window: {schedule.maintenanceWindow}</span>
           <span>By: {schedule.createdBy}</span>
         </div>
       </div>
       <span
-        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
           schedule.status === "SCHEDULED"
             ? "bg-blue-500/10 text-blue-400 ring-blue-500/20"
             : schedule.status === "COMPLETED"

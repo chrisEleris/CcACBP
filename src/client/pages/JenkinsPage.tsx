@@ -50,7 +50,7 @@ function formatDuration(ms: number): string {
 }
 
 function timeAgo(timestamp: string): string {
-  const now = new Date("2026-03-01T11:00:00Z").getTime();
+  const now = new Date().getTime();
   const then = new Date(timestamp).getTime();
   const diffMs = now - then;
   const diffMinutes = Math.floor(diffMs / 60000);

@@ -15,6 +15,7 @@ import type {
   S3Bucket,
   VPC,
 } from "../../shared/types";
+import { config } from "../config";
 import {
   costClient,
   cwClient,
@@ -25,17 +26,7 @@ import {
   ec2Client as vpcClient,
 } from "../services/aws-clients";
 
-const region = process.env.AWS_REGION || "us-east-1";
-
-function formatCodeSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  if (bytes >= 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${bytes} B`;
-}
+const region = config.AWS_REGION;
 
 function getMonthAbbr(date: Date): string {
   return date.toLocaleString("en-US", { month: "short" });
@@ -273,6 +264,3 @@ export const awsRoutes = new Hono()
       return c.json({ data: [], error: message });
     }
   });
-
-// formatCodeSize is available for future use if needed
-void formatCodeSize;

@@ -84,9 +84,11 @@ export const aiRoutes = new Hono()
   .get("/conversations", async (c) => {
     try {
       const pageContext = c.req.query("pageContext");
-      const all = await db.select().from(aiConversations).orderBy(desc(aiConversations.createdAt));
-
-      const filtered = pageContext ? all.filter((conv) => conv.pageContext === pageContext) : all;
+      const filtered = await db
+        .select()
+        .from(aiConversations)
+        .where(pageContext ? eq(aiConversations.pageContext, pageContext) : undefined)
+        .orderBy(desc(aiConversations.createdAt));
 
       return c.json({ data: filtered });
     } catch (error) {

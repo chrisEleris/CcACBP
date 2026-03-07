@@ -88,6 +88,7 @@ export function ReportBuilderPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function handleFormChange<K extends keyof ReportFormState>(key: K, value: ReportFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -176,11 +177,13 @@ export function ReportBuilderPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id);
+    setDeleteError(null);
     try {
       await fetch(`/api/reports/${id}`, { method: "DELETE" });
       refetchReports();
-    } catch {
-      // silently handle - refetch will reflect actual state
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setDeleteError("Failed to delete. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -380,6 +383,7 @@ export function ReportBuilderPage() {
       {/* Saved reports list */}
       <div>
         <h2 className="mb-4 text-base font-semibold text-white">Saved Reports</h2>
+        {deleteError && <p className="text-sm text-red-400 mt-2">{deleteError}</p>}
 
         {reportsLoading && <LoadingState />}
         {reportsError && <ErrorState message={reportsError} onRetry={refetchReports} />}

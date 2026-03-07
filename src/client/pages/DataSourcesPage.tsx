@@ -79,6 +79,7 @@ export function DataSourcesPage() {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleCreate() {
     if (!form.name.trim()) {
@@ -108,11 +109,13 @@ export function DataSourcesPage() {
 
   async function handleTestConnection(id: string) {
     setTestingId(id);
+    setActionError(null);
     try {
       await fetch(`/api/data-sources/${id}/test`, { method: "POST" });
       refetch();
-    } catch {
-      // silently handle, refetch will show updated status
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setActionError("Failed to test connection. Please try again.");
     } finally {
       setTestingId(null);
     }
@@ -120,11 +123,13 @@ export function DataSourcesPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id);
+    setActionError(null);
     try {
       await fetch(`/api/data-sources/${id}`, { method: "DELETE" });
       refetch();
-    } catch {
-      // silently handle
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setActionError("Failed to delete. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -160,6 +165,8 @@ export function DataSourcesPage() {
           Add Data Source
         </button>
       </div>
+
+      {actionError && <p className="text-sm text-red-400 mt-2">{actionError}</p>}
 
       {/* Grid */}
       {sources.length === 0 ? (

@@ -26,7 +26,11 @@ import { StatusBadge } from "../components/StatusBadge";
 import { cpuMetrics } from "../lib/mock-data";
 import { useFetch } from "../lib/use-fetch";
 
-export function DashboardPage() {
+type DashboardPageProps = {
+  onNavigate: (path: string) => void;
+};
+
+export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { data: ec2Instances } = useFetch<EC2Instance[]>("/api/aws/ec2/instances");
   const { data: cloudWatchAlarms } = useFetch<CloudWatchAlarm[]>("/api/aws/cloudwatch/alarms");
   const { data: iamUsers } = useFetch<IAMUser[]>("/api/aws/iam/users");
@@ -221,14 +225,35 @@ export function DashboardPage() {
           <h3 className="mb-4 text-sm font-medium text-gray-400">Quick Actions</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
-              { icon: <Server size={18} />, label: "Launch Instance", color: "text-blue-400" },
-              { icon: <Database size={18} />, label: "Create Bucket", color: "text-emerald-400" },
-              { icon: <Activity size={18} />, label: "Create Alarm", color: "text-yellow-400" },
-              { icon: <Zap size={18} />, label: "Deploy Lambda", color: "text-purple-400" },
+              {
+                icon: <Server size={18} />,
+                label: "Launch Instance",
+                color: "text-blue-400",
+                path: "/ec2",
+              },
+              {
+                icon: <Database size={18} />,
+                label: "Create Bucket",
+                color: "text-emerald-400",
+                path: "/s3",
+              },
+              {
+                icon: <Activity size={18} />,
+                label: "Create Alarm",
+                color: "text-yellow-400",
+                path: "/cloudwatch",
+              },
+              {
+                icon: <Zap size={18} />,
+                label: "Deploy Lambda",
+                color: "text-purple-400",
+                path: "/lambda",
+              },
             ].map((action) => (
               <button
                 type="button"
                 key={action.label}
+                onClick={() => onNavigate(action.path)}
                 className="flex items-center gap-3 rounded-lg border border-gray-700/50 bg-gray-700/20 p-3 text-left transition-colors hover:bg-gray-700/40"
               >
                 <span className={action.color}>{action.icon}</span>

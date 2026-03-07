@@ -149,21 +149,21 @@ export function AiDrawer({ pageContext, isOpen, onToggle }: AiDrawerProps) {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/ai/chat", {
+      const response = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim(), context: pageContext }),
+        body: JSON.stringify({ prompt: content.trim(), pageContext: pageContext }),
       });
 
       if (!response.ok) {
         throw new Error(`Request failed: ${response.statusText}`);
       }
 
-      const body = (await response.json()) as { data: { content: string } };
+      const body = (await response.json()) as { data: { response: string } };
       const assistantMsg: DrawerMessage = {
         id: `msg-${Date.now()}-assistant`,
         role: "assistant",
-        content: body.data.content,
+        content: body.data.response,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMsg]);

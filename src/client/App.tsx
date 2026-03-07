@@ -63,7 +63,7 @@ function App() {
 
     switch (currentPath) {
       case "/":
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPath} />;
       case "/ec2":
         return <EC2Page />;
       case "/ecs":
@@ -103,7 +103,7 @@ function App() {
       case "/scheduled-reports":
         return <ScheduledReportsPage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPath} />;
     }
   }
 

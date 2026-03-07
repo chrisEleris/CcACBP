@@ -26,12 +26,14 @@ export function Header({ title, onMenuClick }: HeaderProps) {
           <input
             type="text"
             placeholder="Search resources..."
+            aria-label="Search resources"
             className="w-64 rounded-lg bg-white/10 py-2 pr-4 pl-10 text-sm text-white placeholder-gray-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/20"
           />
         </div>
 
         <button
           type="button"
+          aria-label="Notifications"
           className="relative rounded-lg p-2 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
         >
           <Bell size={20} />

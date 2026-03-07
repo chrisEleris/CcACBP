@@ -1,4 +1,7 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { apiKeyAuth } from "./middleware/auth";
 import { aiRoutes } from "./routes/ai";
 import { awsRoutes } from "./routes/aws";
 import { connectorRoutes } from "./routes/connectors";
@@ -12,6 +15,10 @@ import { reportRoutes } from "./routes/reports";
 import { scheduledReportRoutes } from "./routes/scheduled-reports";
 
 const app = new Hono();
+
+app.use("*", cors());
+app.use("*", secureHeaders());
+app.use("/api/*", apiKeyAuth);
 
 app.route("/api", healthRoute);
 app.route("/api/ai", aiRoutes);

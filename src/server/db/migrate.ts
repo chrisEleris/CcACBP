@@ -5,6 +5,8 @@ import type { Client } from "@libsql/client";
 // In production, use `pnpm db:migrate` to run Drizzle-generated migrations.
 export async function initializeSchema(client: Client): Promise<void> {
   await client.executeMultiple(`
+    PRAGMA foreign_keys = ON;
+
     CREATE TABLE IF NOT EXISTS data_sources (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -89,5 +91,23 @@ export async function initializeSchema(client: Client): Promise<void> {
       data_source_id TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS scheduled_reports (
+      id TEXT PRIMARY KEY,
+      report_id TEXT NOT NULL,
+      cron_expression TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      format TEXT NOT NULL DEFAULT 'json',
+      last_run_at TEXT,
+      next_run_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS report_executions_report_id_idx ON report_executions(report_id);
+
+    CREATE INDEX IF NOT EXISTS ai_messages_conversation_id_idx ON ai_messages(conversation_id);
+
+    CREATE INDEX IF NOT EXISTS scheduled_reports_report_id_idx ON scheduled_reports(report_id);
   `);
 }

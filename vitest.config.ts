@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    env: {
+      DATABASE_URL: "file::memory:?cache=shared",
+    },
     globals: false,
     environment: "node",
     include: ["tests/**/*.test.ts"],

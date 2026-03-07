@@ -66,6 +66,7 @@ export function ScheduledReportsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   function handleOpenCreate() {
     setEditingId(null);
@@ -133,6 +134,7 @@ export function ScheduledReportsPage() {
 
   async function handleToggleEnabled(schedule: ScheduledReport) {
     setTogglingId(schedule.id);
+    setActionError(null);
     try {
       await fetch(`/api/scheduled-reports/${schedule.id}`, {
         method: "PUT",
@@ -140,8 +142,9 @@ export function ScheduledReportsPage() {
         body: JSON.stringify({ ...schedule, enabled: !schedule.enabled }),
       });
       refetch();
-    } catch {
-      // silently handle
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setActionError("Failed to update schedule. Please try again.");
     } finally {
       setTogglingId(null);
     }
@@ -149,11 +152,13 @@ export function ScheduledReportsPage() {
 
   async function handleRunNow(id: string) {
     setRunningId(id);
+    setActionError(null);
     try {
       await fetch(`/api/scheduled-reports/${id}/run`, { method: "POST" });
       refetch();
-    } catch {
-      // silently handle
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setActionError("Failed to run schedule. Please try again.");
     } finally {
       setRunningId(null);
     }
@@ -161,11 +166,13 @@ export function ScheduledReportsPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id);
+    setActionError(null);
     try {
       await fetch(`/api/scheduled-reports/${id}`, { method: "DELETE" });
       refetch();
-    } catch {
-      // silently handle
+    } catch (err) {
+      console.error("Operation failed:", err);
+      setActionError("Failed to delete schedule. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -196,6 +203,8 @@ export function ScheduledReportsPage() {
           Create Schedule
         </button>
       </div>
+
+      {actionError && <p className="text-sm text-red-400 mt-2">{actionError}</p>}
 
       {/* Table */}
       {scheduleList.length === 0 ? (

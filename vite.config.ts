@@ -15,5 +15,14 @@ export default defineConfig({
   },
   build: {
     outDir: "dist/public",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          recharts: ["recharts"],
+          "aws-icons": ["lucide-react"],
+        },
+      },
+    },
   },
 });

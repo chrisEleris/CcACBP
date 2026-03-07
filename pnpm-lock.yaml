@@ -33,11 +33,11 @@ importers:
         specifier: ^3.1000.0
         version: 3.1000.0
       '@hono/node-server':
-        specifier: ^1.19.9
-        version: 1.19.9(hono@4.12.3)
+        specifier: ^1.19.11
+        version: 1.19.11(hono@4.12.5)
       '@hono/zod-validator':
         specifier: ^0.4.1
-        version: 0.4.3(hono@4.12.3)(zod@3.25.76)
+        version: 0.4.3(hono@4.12.5)(zod@3.25.76)
       '@libsql/client':
         specifier: ^0.17.0
         version: 0.17.0
@@ -48,8 +48,8 @@ importers:
         specifier: ^0.45.1
         version: 0.45.1(@libsql/client@0.17.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.6.2)
       hono:
-        specifier: ^4.6.0
-        version: 4.12.3
+        specifier: ^4.12.5
+        version: 4.12.5
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@18.3.1)
@@ -1033,8 +1033,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hono/node-server@1.19.9':
-    resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
+  '@hono/node-server@1.19.11':
+    resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -1665,6 +1665,9 @@ packages:
   '@types/node@22.19.13':
     resolution: {integrity: sha512-akNQMv0wW5uyRpD2v2IEyRSZiR+BeGuoB6L310EgGObO44HSMNT8z1xzio28V8qOrgYaopIDNA18YgdXd+qTiw==}
 
+  '@types/node@22.19.15':
+    resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
+
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
@@ -2070,8 +2073,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  hono@4.12.3:
-    resolution: {integrity: sha512-SFsVSjp8sj5UumXOOFlkZOG6XS9SJDKw0TbwFeV+AJ8xlST8kxK5Z/5EYa111UY8732lK2S/xB653ceuaoGwpg==}
+  hono@4.12.5:
+    resolution: {integrity: sha512-3qq+FUBtlTHhtYxbxheZgY8NIFnkkC/MR8u5TTsr7YZ3wixryQ3cCwn3iZbg8p8B88iDBBAYSfZDS75t8MN7Vg==}
     engines: {node: '>=16.9.0'}
 
   ieee754@1.2.1:
@@ -3864,13 +3867,13 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@hono/node-server@1.19.9(hono@4.12.3)':
+  '@hono/node-server@1.19.11(hono@4.12.5)':
     dependencies:
-      hono: 4.12.3
+      hono: 4.12.5
 
-  '@hono/zod-validator@0.4.3(hono@4.12.3)(zod@3.25.76)':
+  '@hono/zod-validator@0.4.3(hono@4.12.5)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.3
+      hono: 4.12.5
       zod: 3.25.76
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -4523,7 +4526,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.19.13
+      '@types/node': 22.19.15
     optional: true
 
   '@types/d3-array@3.2.2': {}
@@ -4555,6 +4558,11 @@ snapshots:
   '@types/node@22.19.13':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/node@22.19.15':
+    dependencies:
+      undici-types: 6.21.0
+    optional: true
 
   '@types/prop-types@15.7.15': {}
 
@@ -4958,7 +4966,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  hono@4.12.3: {}
+  hono@4.12.5: {}
 
   ieee754@1.2.1:
     optional: true

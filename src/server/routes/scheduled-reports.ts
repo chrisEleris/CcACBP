@@ -3,12 +3,8 @@ import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
-import { initializeScheduledSchema } from "../db/migrate-scheduled";
 import { savedReports } from "../db/schema";
 import { type NewScheduledReport, scheduledReports } from "../db/schema-scheduled";
-
-// Ensure the scheduled_reports table exists before handling any requests
-await initializeScheduledSchema();
 
 const createScheduleSchema = z.object({
   reportId: z.string().min(1),
@@ -29,24 +25,27 @@ const updateScheduleSchema = z.object({
 export const scheduledReportRoutes = new Hono()
   .get("/", async (c) => {
     try {
-      const schedules = await db
-        .select()
+      const rows = await db
+        .select({
+          id: scheduledReports.id,
+          reportId: scheduledReports.reportId,
+          cronExpression: scheduledReports.cronExpression,
+          enabled: scheduledReports.enabled,
+          format: scheduledReports.format,
+          lastRunAt: scheduledReports.lastRunAt,
+          nextRunAt: scheduledReports.nextRunAt,
+          createdAt: scheduledReports.createdAt,
+          updatedAt: scheduledReports.updatedAt,
+          reportName: savedReports.name,
+        })
         .from(scheduledReports)
+        .leftJoin(savedReports, eq(scheduledReports.reportId, savedReports.id))
         .orderBy(desc(scheduledReports.createdAt));
 
-      // Enrich each schedule with the report name (best-effort join)
-      const enriched = await Promise.all(
-        schedules.map(async (schedule) => {
-          const [report] = await db
-            .select({ id: savedReports.id, name: savedReports.name })
-            .from(savedReports)
-            .where(eq(savedReports.id, schedule.reportId));
-          return {
-            ...schedule,
-            reportName: report?.name ?? null,
-          };
-        }),
-      );
+      const enriched = rows.map((row) => ({
+        ...row,
+        reportName: row.reportName ?? null,
+      }));
 
       return c.json({ data: enriched });
     } catch (error) {
