@@ -125,9 +125,10 @@ export const reportRoutes = new Hono()
       if (!existing) {
         return c.json({ message: "Report not found" }, 404);
       }
-      // Delete related executions first (no FK cascade in SQLite without pragma)
-      await db.delete(reportExecutions).where(eq(reportExecutions.reportId, id));
-      await db.delete(savedReports).where(eq(savedReports.id, id));
+      await db.transaction(async (tx) => {
+        await tx.delete(reportExecutions).where(eq(reportExecutions.reportId, id));
+        await tx.delete(savedReports).where(eq(savedReports.id, id));
+      });
       return c.json({ data: { message: "Report deleted" } });
     } catch (error) {
       console.error("Error deleting report:", error);
@@ -143,6 +144,7 @@ export const reportRoutes = new Hono()
         return c.json({ message: "Report not found" }, 404);
       }
 
+      // Stub: returns simulated execution results until real query engine is wired up.
       const rowCount = Math.floor(Math.random() * 1000) + 1;
       const durationMs = Math.floor(Math.random() * 2000) + 50;
       const now = new Date().toISOString();
@@ -152,7 +154,7 @@ export const reportRoutes = new Hono()
         .values({
           id: crypto.randomUUID(),
           reportId: id,
-          status: "completed",
+          status: "mock",
           rowCount,
           durationMs,
           error: null,

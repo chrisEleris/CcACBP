@@ -49,6 +49,19 @@ describe("Data Source API routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("POST /api/data-sources rejects invalid JSON config", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Invalid Config",
+        type: "mysql",
+        config: "not valid json",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("POST /api/data-sources rejects empty name", async () => {
     const res = await app.request("/api/data-sources", {
       method: "POST",
@@ -81,8 +94,9 @@ describe("Data Source API routes", () => {
     });
     expect(testRes.status).toBe(200);
     const body = await testRes.json();
-    expect(body.data.status).toBe("connected");
+    expect(body.data.status).toBe("disconnected");
     expect(body.data.lastTestedAt).toBeDefined();
+    expect(body.mock).toBe(true);
   });
 
   it("DELETE /api/data-sources/:id removes a data source", async () => {

@@ -80,7 +80,7 @@ describe("Report API routes", () => {
     });
     expect(execRes.status).toBe(200);
     const body = await execRes.json();
-    expect(body.data.status).toBe("completed");
+    expect(body.data.status).toBe("mock");
     expect(body.data.reportId).toBe(id);
     expect(body.data.rowCount).toBeGreaterThanOrEqual(0);
   });

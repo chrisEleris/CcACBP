@@ -2,8 +2,6 @@ import { timingSafeEqual } from "node:crypto";
 import type { Context, Next } from "hono";
 import { config } from "../config";
 
-const MUTATING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
-
 /**
  * Compares two strings in constant time to prevent timing attacks.
  */
@@ -18,7 +16,7 @@ function safeCompare(a: string, b: string): boolean {
 }
 
 /**
- * API key authentication middleware for mutating HTTP methods.
+ * API key authentication middleware for all HTTP methods.
  *
  * Checks for credentials in:
  *   - X-API-Key header
@@ -32,12 +30,6 @@ export async function apiKeyAuth(c: Context, next: Next): Promise<void> {
 
   // Skip auth in development mode (no API_KEY configured)
   if (!apiKey) {
-    await next();
-    return;
-  }
-
-  // Only enforce auth on mutating methods
-  if (!MUTATING_METHODS.has(c.req.method)) {
     await next();
     return;
   }

@@ -59,9 +59,13 @@ async function getDbSchema(): Promise<SchemaTable[]> {
 export const queryRoutes = new Hono()
   .post("/execute", zValidator("json", executeQuerySchema), async (c) => {
     try {
-      const _validated = c.req.valid("json");
+      c.req.valid("json");
 
-      // TODO: Replace with actual query execution against the configured data source
+      // Stub: returns mock data. When implementing real execution:
+      // - Enforce read-only connections (no INSERT/UPDATE/DELETE/DROP/ALTER)
+      // - Apply query timeout limits
+      // - Use parameterized queries only
+      // - Add per-user rate limiting
       return c.json({
         data: {
           columns: ["id", "name", "value"],
@@ -72,6 +76,7 @@ export const queryRoutes = new Hono()
           ],
           rowCount: 3,
           durationMs: 42,
+          mock: true,
         },
       });
     } catch (error) {

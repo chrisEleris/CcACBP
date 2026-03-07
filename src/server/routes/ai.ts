@@ -155,9 +155,10 @@ export const aiRoutes = new Hono()
         return c.json({ message: "Conversation not found" }, 404);
       }
 
-      // Delete messages first (no FK cascade in SQLite without pragma)
-      await db.delete(aiMessages).where(eq(aiMessages.conversationId, id));
-      await db.delete(aiConversations).where(eq(aiConversations.id, id));
+      await db.transaction(async (tx) => {
+        await tx.delete(aiMessages).where(eq(aiMessages.conversationId, id));
+        await tx.delete(aiConversations).where(eq(aiConversations.id, id));
+      });
 
       return c.json({ data: { message: "Conversation deleted" } });
     } catch (error) {

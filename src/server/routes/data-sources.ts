@@ -58,17 +58,33 @@ function redactDataSource(row: DataSourceRow): DataSourceRow {
 const MAX_NAME = 500;
 const MAX_CONFIG = 10_000;
 
+const jsonString = z
+  .string()
+  .min(1)
+  .max(MAX_CONFIG)
+  .refine(
+    (v) => {
+      try {
+        JSON.parse(v);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Must be valid JSON" },
+  );
+
 const createDataSourceSchema = z.object({
   name: z.string().min(1).max(MAX_NAME),
   type: z.enum(["cloudwatch", "redshift", "mysql", "s3", "csv"]),
-  config: z.string().min(1).max(MAX_CONFIG),
+  config: jsonString,
   status: z.enum(["connected", "disconnected", "error"]).optional(),
 });
 
 const updateDataSourceSchema = z.object({
   name: z.string().min(1).max(MAX_NAME).optional(),
   type: z.enum(["cloudwatch", "redshift", "mysql", "s3", "csv"]).optional(),
-  config: z.string().min(1).max(MAX_CONFIG).optional(),
+  config: jsonString.optional(),
   status: z.enum(["connected", "disconnected", "error"]).optional(),
 });
 
@@ -165,14 +181,16 @@ export const dataSourceRoutes = new Hono()
         return c.json({ message: "Data source not found" }, 404);
       }
 
+      // Stub: no real connectivity test is performed yet.
+      // We update lastTestedAt but do NOT change status to avoid false confidence.
       const now = new Date().toISOString();
       const [updated] = await db
         .update(dataSources)
-        .set({ status: "connected", lastTestedAt: now, updatedAt: now })
+        .set({ lastTestedAt: now, updatedAt: now })
         .where(eq(dataSources.id, id))
         .returning();
 
-      return c.json({ data: redactDataSource(updated) });
+      return c.json({ data: redactDataSource(updated), mock: true });
     } catch (error) {
       console.error("Error testing data source connection:", error);
       return c.json({ message: "Failed to test connection" }, 500);
