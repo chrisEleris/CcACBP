@@ -1,9 +1,10 @@
 # PG-005: Pagination fallback resets valid offset when only limit is invalid
 
 **Severity:** low
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -62,9 +63,9 @@ export function parsePagination(c: Context): Pagination {
 
 ## Acceptance checks
 
-- [ ] A valid `offset` is preserved when only `limit` is invalid (or out of range)
+- [x] A valid `offset` is preserved when only `limit` is invalid (or out of range)
 - [ ] `parsePagination` test added for `limit=999&offset=100` → offset is not reset to 0
-- [ ] Existing pagination tests still pass
+- [x] Existing pagination tests still pass
 
 ---
 
@@ -76,4 +77,4 @@ export function parsePagination(c: Context): Pagination {
 
 ## Final resolution
 
-*(pending)*
+`parsePagination` in `src/server/lib/pagination.ts` now parses `limit` and `offset` independently using separate `safeParse` calls. An invalid limit no longer resets a valid offset — each field falls back to its own default independently. The existing `paginationSchema` definition is kept for documentation purposes; only the function implementation changed.

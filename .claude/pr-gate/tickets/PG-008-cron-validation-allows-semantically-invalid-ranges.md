@@ -1,9 +1,10 @@
 # PG-008: Cron expression validation allows semantically invalid range values
 
 **Severity:** low
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -57,8 +58,8 @@ Or use a well-tested cron validation library (e.g. `cron-parser`) which handles 
 
 ## Acceptance checks
 
-- [ ] `"99 99 99 99 99"` is rejected with a clear error message
-- [ ] `"59-0 * * * *"` is rejected (descending range) or explicitly accepted if the cron library supports it
+- [x] `"99 99 99 99 99"` is rejected with a clear error message
+- [x] `"59-0 * * * *"` is rejected (descending range) or explicitly accepted if the cron library supports it
 
 ---
 
@@ -70,4 +71,4 @@ Or use a well-tested cron validation library (e.g. `cron-parser`) which handles 
 
 ## Final resolution
 
-*(pending)*
+`src/server/routes/scheduled-reports.ts` now adds `CRON_RANGES` (per-field min/max bounds) and `validateCronFieldRange()` which checks each comma-separated value and range bound against the allowed range for that field position. The `cronExpression` refine callback runs both `CRON_FIELD.test(part)` and `validateCronFieldRange(part, CRON_RANGES[i])`. Values like `"99 99 99 99 99"` and `"59-0 * * * *"` are now rejected.

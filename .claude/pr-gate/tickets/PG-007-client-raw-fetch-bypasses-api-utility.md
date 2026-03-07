@@ -1,9 +1,10 @@
 # PG-007: Multiple pages use raw fetch() instead of fetchApi/mutateApi utility
 
 **Severity:** low
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -55,9 +56,9 @@ await mutateApi("/api/data-sources", "POST", form);
 
 ## Acceptance checks
 
-- [ ] No raw `fetch()` calls remain in `src/client/pages/` that bypass `fetchApi`/`mutateApi`
-- [ ] All mutation callers use `mutateApi`
-- [ ] All GET callers use `fetchApi` or `useFetch`
+- [x] No raw `fetch()` calls remain in `src/client/pages/` that bypass `fetchApi`/`mutateApi`
+- [x] All mutation callers use `mutateApi`
+- [x] All GET callers use `fetchApi` or `useFetch`
 
 ---
 
@@ -69,4 +70,4 @@ await mutateApi("/api/data-sources", "POST", form);
 
 ## Final resolution
 
-*(pending)*
+All raw `fetch()` calls in client pages and components replaced with `fetchApi`/`mutateApi`. Updated files: `DataSourcesPage.tsx`, `AiAssistantPage.tsx`, `QueryExplorerPage.tsx`, `ReportBuilderPage.tsx`, `ReportViewerPage.tsx`, `ScheduledReportsPage.tsx`, `AiDrawer.tsx`. Each file now imports from `../lib/api` and uses the centralized utilities, ensuring auth headers from PG-001 are consistently applied.

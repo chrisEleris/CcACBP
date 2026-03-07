@@ -1,9 +1,10 @@
 # PG-002: Timing side-channel leaks API key length in safeCompare
 
 **Severity:** medium
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -63,9 +64,9 @@ This normalizes both inputs to 32 bytes regardless of length, eliminating the le
 
 ## Acceptance checks
 
-- [ ] `safeCompare` no longer branches on `a.length !== b.length` in a way that produces measurable timing differences
-- [ ] Both inputs are normalized to equal-length buffers before `timingSafeEqual`
-- [ ] Existing auth tests still pass
+- [x] `safeCompare` no longer branches on `a.length !== b.length` in a way that produces measurable timing differences
+- [x] Both inputs are normalized to equal-length buffers before `timingSafeEqual`
+- [x] Existing auth tests still pass
 
 ---
 
@@ -77,4 +78,4 @@ This normalizes both inputs to 32 bytes regardless of length, eliminating the le
 
 ## Final resolution
 
-*(pending)*
+`safeCompare` in `src/server/middleware/auth.ts` now pads both buffers to `maxLen = Math.max(bufA.length, bufB.length)` before calling `timingSafeEqual`, then always returns `false` when original lengths differ. The comparison always runs for the same number of bytes regardless of which string is shorter, eliminating the length-based timing oracle.

@@ -1,9 +1,10 @@
 # PG-001: Client has no mechanism to send API key in production
 
 **Severity:** high
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -42,7 +43,7 @@ Either:
 
 ## Acceptance checks
 
-- [ ] Either: `fetchApi`/`mutateApi` attach credentials from a runtime configuration source, OR
+- [x] Either: `fetchApi`/`mutateApi` attach credentials from a runtime configuration source, OR
 - [ ] Auth is moved to the network layer with the SPA on the same protected origin, OR
 - [ ] Documentation clearly states the SPA is never used with `API_KEY` set and this is intentional
 
@@ -56,4 +57,4 @@ Either:
 
 ## Final resolution
 
-*(pending)*
+`getAuthHeaders()` added to `src/client/lib/api.ts` — reads `VITE_API_KEY` from `import.meta.env` and attaches it as `X-API-Key` in both `fetchApi` and `mutateApi`. All raw `fetch()` calls in client pages replaced with `fetchApi`/`mutateApi` (see PG-007 fix). When `VITE_API_KEY` is absent, no auth header is added so development mode continues to work without configuration.

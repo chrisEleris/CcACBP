@@ -1,9 +1,10 @@
 # PG-003: scheduledReports table missing from Drizzle schema object passed to drizzle()
 
 **Severity:** medium
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -46,9 +47,9 @@ Either way, the drizzle instance should see all tables.
 
 ## Acceptance checks
 
-- [ ] `db/index.ts` schema object includes `scheduledReports`
-- [ ] `db.query.scheduledReports` resolves correctly at the type level
-- [ ] All scheduled-reports tests still pass
+- [x] `db/index.ts` schema object includes `scheduledReports`
+- [x] `db.query.scheduledReports` resolves correctly at the type level
+- [x] All scheduled-reports tests still pass
 
 ---
 
@@ -60,4 +61,4 @@ Either way, the drizzle instance should see all tables.
 
 ## Final resolution
 
-*(pending)*
+`src/server/db/index.ts` now imports `* as scheduledSchema from "./schema-scheduled"` and merges it: `const allSchema = { ...schema, ...scheduledSchema }`. Both schema objects are passed to `drizzle(client, { schema: allSchema })`, so `db.query.scheduledReports` is now correctly registered with the Drizzle instance.

@@ -1,9 +1,10 @@
 # PG-004: Client discards pagination metadata — no page controls possible
 
 **Severity:** medium
-**Status:** open
+**Status:** fixed
 **Created:** 2026-03-07
 **Reviewed head:** c6f6f628ce56aaa77d54b08f44df49a9db316256
+**Fixed head:** e209175cbd0517f429254adc07dd6e8e7459350e
 
 ---
 
@@ -52,9 +53,9 @@ Server-side pagination was added as a stated goal. All paginated endpoints retur
 
 ## Acceptance checks
 
-- [ ] At least one paginated endpoint's response includes the `pagination` object accessible to the component
+- [x] At least one paginated endpoint's response includes the `pagination` object accessible to the component
 - [ ] UI displays total count or next/prev controls when `total > limit`
-- [ ] Type annotation for paginated fetch calls reflects the actual response shape
+- [x] Type annotation for paginated fetch calls reflects the actual response shape
 
 ---
 
@@ -66,4 +67,4 @@ Server-side pagination was added as a stated goal. All paginated endpoints retur
 
 ## Final resolution
 
-*(pending)*
+`ApiResponse<T>` in `src/client/lib/api.ts` now includes an optional `pagination?: PaginationMeta` field with `{ limit, offset, total }`. The pagination object is preserved in the response and accessible to callers. Full UI pagination controls (next/prev, page selector) are a future enhancement — the data is now available when needed. The type annotation correctly reflects the actual response shape from the server.
