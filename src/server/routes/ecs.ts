@@ -29,29 +29,29 @@ const scaleServiceSchema = z.object({
   desiredCount: z.number().int().min(0).max(100),
 });
 
-function resolveClusterStatus(raw: string | undefined): ECSCluster["status"] {
+export function resolveClusterStatus(raw: string | undefined): ECSCluster["status"] {
   return raw === "INACTIVE" ? "INACTIVE" : "ACTIVE";
 }
 
-function resolveServiceStatus(raw: string | undefined): ECSService["status"] {
+export function resolveServiceStatus(raw: string | undefined): ECSService["status"] {
   if (raw === "DRAINING") return "DRAINING";
   if (raw === "INACTIVE") return "INACTIVE";
   return "ACTIVE";
 }
 
-function resolveDeploymentStatus(raw: string | undefined): ECSDeploymentStatus {
+export function resolveDeploymentStatus(raw: string | undefined): ECSDeploymentStatus {
   if (raw === "ACTIVE") return "ACTIVE";
   if (raw === "INACTIVE") return "INACTIVE";
   return "PRIMARY";
 }
 
-function resolveRolloutState(raw: string | undefined): ECSRolloutState {
+export function resolveRolloutState(raw: string | undefined): ECSRolloutState {
   if (raw === "FAILED") return "FAILED";
   if (raw === "IN_PROGRESS") return "IN_PROGRESS";
   return "COMPLETED";
 }
 
-function resolveTaskStatus(raw: string | undefined): ECSTaskStatus {
+export function resolveTaskStatus(raw: string | undefined): ECSTaskStatus {
   if (raw === "PROVISIONING") return "PROVISIONING";
   if (raw === "PENDING") return "PENDING";
   if (raw === "RUNNING") return "RUNNING";
@@ -59,19 +59,19 @@ function resolveTaskStatus(raw: string | undefined): ECSTaskStatus {
   return "STOPPED";
 }
 
-function resolveHealth(raw: string | undefined): "HEALTHY" | "UNHEALTHY" | "UNKNOWN" {
+export function resolveHealth(raw: string | undefined): "HEALTHY" | "UNHEALTHY" | "UNKNOWN" {
   if (raw === "HEALTHY") return "HEALTHY";
   if (raw === "UNHEALTHY") return "UNHEALTHY";
   return "UNKNOWN";
 }
 
-function resolveContainerStatus(raw: string | undefined): ECSContainer["status"] {
+export function resolveContainerStatus(raw: string | undefined): ECSContainer["status"] {
   if (raw === "RUNNING") return "RUNNING";
   if (raw === "STOPPED") return "STOPPED";
   return "PENDING";
 }
 
-function resolveServiceHealth(svc: {
+export function resolveServiceHealth(svc: {
   runningCount?: number;
   desiredCount?: number;
 }): ECSServiceHealth {
@@ -83,7 +83,7 @@ function resolveServiceHealth(svc: {
   return "ROLLING";
 }
 
-function resolveEventType(message: string): ECSEvent["type"] {
+export function resolveEventType(message: string): ECSEvent["type"] {
   const lower = message.toLowerCase();
   if (lower.includes("error") || lower.includes("fail")) return "ERROR";
   if (lower.includes("scale") || lower.includes("capacity")) return "SCALING";
@@ -91,7 +91,7 @@ function resolveEventType(message: string): ECSEvent["type"] {
   return "DEPLOYMENT";
 }
 
-function resolveLaunchType(raw: string | undefined): "FARGATE" | "EC2" {
+export function resolveLaunchType(raw: string | undefined): "FARGATE" | "EC2" {
   return raw === "EC2" ? "EC2" : "FARGATE";
 }
 

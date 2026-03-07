@@ -107,4 +107,92 @@ describe("Report API routes", () => {
     });
     expect(deleteRes.status).toBe(200);
   });
+
+  it("GET /api/reports/:id returns a report when found", async () => {
+    const createRes = await app.request("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Fetch Me",
+        query: "SELECT 1",
+        visualization: "table",
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const getRes = await app.request(`/api/reports/${id}`);
+    expect(getRes.status).toBe(200);
+    const body = await getRes.json();
+    expect(body.data.id).toBe(id);
+    expect(body.data.name).toBe("Fetch Me");
+  });
+
+  it("GET /api/reports/:id returns 404 when report does not exist", async () => {
+    const res = await app.request("/api/reports/nonexistent-id-that-does-not-exist");
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Report not found");
+  });
+
+  it("PUT /api/reports/:id updates an existing report", async () => {
+    const createRes = await app.request("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Original Name",
+        query: "SELECT 1",
+        visualization: "table",
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    const updateRes = await app.request(`/api/reports/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Updated Name", visualization: "bar" }),
+    });
+    expect(updateRes.status).toBe(200);
+    const body = await updateRes.json();
+    expect(body.data.id).toBe(id);
+    expect(body.data.name).toBe("Updated Name");
+    expect(body.data.visualization).toBe("bar");
+  });
+
+  it("PUT /api/reports/:id returns 404 when report does not exist", async () => {
+    const res = await app.request("/api/reports/nonexistent-id-that-does-not-exist", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Ghost Update" }),
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Report not found");
+  });
+
+  it("POST /api/reports/:id/execute returns 404 when report does not exist", async () => {
+    const res = await app.request("/api/reports/nonexistent-id-that-does-not-exist/execute", {
+      method: "POST",
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Report not found");
+  });
+
+  it("GET /api/reports/:id/executions returns 404 when report does not exist", async () => {
+    const res = await app.request("/api/reports/nonexistent-id-that-does-not-exist/executions");
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Report not found");
+  });
+
+  it("DELETE /api/reports/:id returns 404 when report does not exist", async () => {
+    const res = await app.request("/api/reports/nonexistent-id-that-does-not-exist", {
+      method: "DELETE",
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Report not found");
+  });
 });

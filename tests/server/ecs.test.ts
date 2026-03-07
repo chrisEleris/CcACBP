@@ -73,4 +73,26 @@ describe("ECS API routes", () => {
     expect(Array.isArray(body.data)).toBe(true);
     expect("error" in body).toBe(true);
   });
+
+  it("GET /api/ecs/clusters/:name returns structured response with data and error fields", async () => {
+    const res = await app.request("/api/ecs/clusters/my-cluster");
+    const body = await res.json();
+    // Returns 200/404 on success or 500 on AWS credential error — all return structured data
+    expect([200, 404, 500]).toContain(res.status);
+    expect("data" in body).toBe(true);
+    expect("error" in body).toBe(true);
+  });
+
+  it("POST /api/ecs/tasks/:cluster/:taskId/stop returns structured response with cluster and taskId", async () => {
+    const res = await app.request("/api/ecs/tasks/my-cluster/my-task-id/stop", {
+      method: "POST",
+    });
+    const body = await res.json();
+    // Returns 202 on success or 500 on AWS credential error — both return structured data
+    expect([202, 500]).toContain(res.status);
+    expect("data" in body).toBe(true);
+    expect("error" in body).toBe(true);
+    expect(body.data.cluster).toBe("my-cluster");
+    expect(body.data.taskId).toBe("my-task-id");
+  });
 });
