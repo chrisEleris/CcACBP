@@ -1735,6 +1735,20 @@ If a breaking change is ABSOLUTELY necessary:
 
 ---
 
+## PR gate workflow
+
+Before any PR-related action, invoke the `pr-gatekeeper` subagent.
+
+Use the tickets in `.claude/pr-gate/tickets/` as the source of truth for review findings and disagreements.
+
+When addressing a ticket:
+1. change the code and/or tests
+2. append an `Author response` in the ticket if you disagree
+3. update the ticket status only with evidence
+
+Never delete tickets to make the review look clean.
+A PR must not be created or marked ready unless `.claude/pr-gate/SUMMARY.md` matches the current HEAD and reports `overall_status: pass`.
+
 **End of Document**
 
 *These are the coding standards for the CcACBP project.*
