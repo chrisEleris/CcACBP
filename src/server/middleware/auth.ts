@@ -1,4 +1,5 @@
 import type { Context, Next } from "hono";
+import { config } from "../config";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 
@@ -13,7 +14,7 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
  * (development mode).
  */
 export async function apiKeyAuth(c: Context, next: Next): Promise<void> {
-  const apiKey = process.env.API_KEY;
+  const apiKey = config.API_KEY;
 
   // Skip auth in development mode (no API_KEY configured)
   if (!apiKey) {

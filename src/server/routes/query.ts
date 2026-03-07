@@ -134,11 +134,7 @@ const mockSchema: SchemaTable[] = [
 export const queryRoutes = new Hono()
   .post("/execute", zValidator("json", executeQuerySchema), async (c) => {
     try {
-      const { sql: querySql, dataSourceId } = c.req.valid("json");
-
-      // Mock query execution — return sample columnar data
-      void dataSourceId;
-      void querySql;
+      const _validated = c.req.valid("json");
 
       return c.json({
         data: {

@@ -202,13 +202,12 @@ export const aiRoutes = new Hono()
   .post("/analyze", zValidator("json", analyzeSchema), async (c) => {
     try {
       const { prompt, pageContext, agentType } = c.req.valid("json");
-      void prompt;
 
       const resolvedAgentType = agentType ?? "general";
 
       return c.json({
         data: {
-          response: `Based on the ${pageContext} data, here is my analysis: This is a mock analysis response. In a real implementation, the ${resolvedAgentType} agent would process your query and provide actionable insights.`,
+          response: `Based on the ${pageContext} data for your query "${prompt.slice(0, 100)}": This is a mock analysis response. In a real implementation, the ${resolvedAgentType} agent would process your query and provide actionable insights.`,
           agentType: resolvedAgentType,
         },
       });

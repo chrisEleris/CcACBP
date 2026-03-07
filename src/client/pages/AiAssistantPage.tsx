@@ -5,14 +5,21 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useFetch } from "../lib/use-fetch";
 
-type AgentType = "general" | "sql" | "analysis" | "ops";
+type AgentType =
+  | "general"
+  | "log-analysis"
+  | "cost-optimization"
+  | "infrastructure"
+  | "security"
+  | "report-builder";
 
 type Conversation = {
   id: string;
   title: string;
+  pageContext: string;
   agentType: AgentType;
-  lastMessageAt: string;
-  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type Message = {
@@ -23,10 +30,28 @@ type Message = {
 };
 
 const agentOptions: { type: AgentType; label: string; description: string }[] = [
-  { type: "general", label: "General Assistant", description: "General-purpose AI assistant" },
-  { type: "sql", label: "SQL Expert", description: "Query building and optimization" },
-  { type: "analysis", label: "Data Analyst", description: "Data insights and analysis" },
-  { type: "ops", label: "Ops Advisor", description: "Infrastructure and operations" },
+  { type: "general", label: "General Analytics", description: "Cross-source data analysis" },
+  {
+    type: "log-analysis",
+    label: "Log Analysis",
+    description: "CloudWatch log pattern detection",
+  },
+  {
+    type: "cost-optimization",
+    label: "Cost Optimization",
+    description: "AWS cost analysis and savings",
+  },
+  {
+    type: "infrastructure",
+    label: "Infrastructure",
+    description: "EC2/ECS sizing and health",
+  },
+  { type: "security", label: "Security", description: "IAM policy review and audit" },
+  {
+    type: "report-builder",
+    label: "Report Builder",
+    description: "Natural language to SQL queries",
+  },
 ];
 
 export function AiAssistantPage() {
@@ -57,10 +82,12 @@ export function AiAssistantPage() {
     setMessagesLoading(true);
     setSendError(null);
     try {
-      const response = await fetch(`/api/ai/conversations/${convId}/messages`);
+      const response = await fetch(`/api/ai/conversations/${convId}`);
       if (!response.ok) throw new Error(`Failed to load messages: ${response.statusText}`);
-      const body = (await response.json()) as { data: Message[] };
-      setMessages(body.data);
+      const body = (await response.json()) as {
+        data: { conversation: Conversation; messages: Message[] };
+      };
+      setMessages(body.data.messages);
     } catch (err) {
       setSendError(err instanceof Error ? err.message : "Failed to load messages");
     } finally {
@@ -82,7 +109,11 @@ export function AiAssistantPage() {
       const response = await fetch("/api/ai/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentType: selectedAgent }),
+        body: JSON.stringify({
+          title: "New Conversation",
+          pageContext: "ai",
+          agentType: selectedAgent,
+        }),
       });
       if (!response.ok) throw new Error(`Failed to create: ${response.statusText}`);
       const body = (await response.json()) as { data: Conversation };
@@ -116,12 +147,12 @@ export function AiAssistantPage() {
       const response = await fetch(`/api/ai/conversations/${selectedConvId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: messageText }),
+        body: JSON.stringify({ role: "user", content: messageText }),
       });
       if (!response.ok) throw new Error(`Failed to send: ${response.statusText}`);
-      const body = (await response.json()) as { data: Message[] };
-      // Replace optimistic message with real response
-      setMessages((prev) => [...prev.filter((m) => m.id !== optimisticMsg.id), ...body.data]);
+      const body = (await response.json()) as { data: Message };
+      // Replace optimistic message with the saved message from server
+      setMessages((prev) => [...prev.filter((m) => m.id !== optimisticMsg.id), body.data]);
       refetchConvs();
     } catch (err) {
       setSendError(err instanceof Error ? err.message : "Failed to send message");
@@ -186,7 +217,7 @@ export function AiAssistantPage() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{conv.title}</p>
                   <p className="mt-0.5 text-xs text-gray-500">
-                    {conv.messageCount} message{conv.messageCount !== 1 ? "s" : ""}
+                    {new Date(conv.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>

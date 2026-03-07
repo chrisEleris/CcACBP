@@ -10,7 +10,7 @@ const createScheduleSchema = z.object({
   reportId: z.string().min(1),
   cronExpression: z.string().min(1),
   enabled: z.boolean().optional(),
-  format: z.enum(["json", "csv"]).optional(),
+  format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
   nextRunAt: z.string().optional(),
 });
 
@@ -18,7 +18,7 @@ const updateScheduleSchema = z.object({
   reportId: z.string().min(1).optional(),
   cronExpression: z.string().min(1).optional(),
   enabled: z.boolean().optional(),
-  format: z.enum(["json", "csv"]).optional(),
+  format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
   nextRunAt: z.string().nullable().optional(),
 });
 
