@@ -146,8 +146,7 @@ export function ScheduledReportsPage() {
       }
       refetch();
     } catch (err) {
-      void err;
-      setActionError("Failed to update schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to update schedule.");
     } finally {
       setTogglingId(null);
     }
@@ -163,8 +162,7 @@ export function ScheduledReportsPage() {
       }
       refetch();
     } catch (err) {
-      void err;
-      setActionError("Failed to run schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to run schedule.");
     } finally {
       setRunningId(null);
     }
@@ -180,8 +178,7 @@ export function ScheduledReportsPage() {
       }
       refetch();
     } catch (err) {
-      void err;
-      setActionError("Failed to delete schedule. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to delete schedule.");
     } finally {
       setDeletingId(null);
     }

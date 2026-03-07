@@ -194,8 +194,7 @@ export function ReportBuilderPage() {
       }
       refetchReports();
     } catch (err) {
-      void err;
-      setDeleteError("Failed to delete. Please try again.");
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete.");
     } finally {
       setDeletingId(null);
     }

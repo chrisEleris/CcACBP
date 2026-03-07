@@ -106,8 +106,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      void err;
-      setActionError("Failed to test connection. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to test connection.");
     } finally {
       setTestingId(null);
     }
@@ -123,8 +122,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      void err;
-      setActionError("Failed to delete. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Failed to delete.");
     } finally {
       setDeletingId(null);
     }

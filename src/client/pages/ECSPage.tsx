@@ -170,14 +170,17 @@ function ClusterCard({
 function ServiceTasksDetail({
   service,
   clusterName,
+  taskFilter,
 }: {
   service: ECSService;
   clusterName: string;
+  taskFilter: "all" | ECSTaskStatus;
 }) {
   const { data: tasksData, loading } = useFetch<ECSTask[]>(
     `/api/ecs/tasks/${clusterName}/${service.name}`,
   );
-  const tasks = tasksData ?? [];
+  const allTasks = tasksData ?? [];
+  const tasks = taskFilter === "all" ? allTasks : allTasks.filter((t) => t.status === taskFilter);
 
   return (
     <div className="space-y-4">
@@ -267,7 +270,12 @@ function ServiceTasksDetail({
       {(loading || tasks.length > 0) && (
         <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 p-3">
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Tasks {loading ? "" : `(${tasks.length})`}
+            Tasks{" "}
+            {loading
+              ? ""
+              : taskFilter === "all"
+                ? `(${tasks.length})`
+                : `(${tasks.length}/${allTasks.length})`}
           </h4>
           {loading ? (
             <p className="py-4 text-center text-xs text-gray-600">Loading tasks...</p>
@@ -341,11 +349,13 @@ function ServiceRow({
   clusterName,
   isExpanded,
   onToggle,
+  taskFilter,
 }: {
   service: ECSService;
   clusterName: string;
   isExpanded: boolean;
   onToggle: () => void;
+  taskFilter: "all" | ECSTaskStatus;
 }) {
   const countMismatch = service.desiredCount !== service.runningCount;
   const primaryDeployment = service.deployments.find((d) => d.status === "PRIMARY");
@@ -450,7 +460,11 @@ function ServiceRow({
       {isExpanded && (
         <tr className="border-b border-gray-700/30 bg-gray-900/40">
           <td colSpan={8} className="px-4 py-4">
-            <ServiceTasksDetail service={service} clusterName={clusterName} />
+            <ServiceTasksDetail
+              service={service}
+              clusterName={clusterName}
+              taskFilter={taskFilter}
+            />
           </td>
         </tr>
       )}
@@ -635,6 +649,7 @@ function ECSClusterView({
                   clusterName={selectedCluster}
                   isExpanded={expandedService === svc.name}
                   onToggle={() => onToggleService(svc.name)}
+                  taskFilter={taskFilter}
                 />
               ))}
             </tbody>
