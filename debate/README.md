@@ -21,6 +21,11 @@ Use this process to resolve contradictory opinions with discipline instead of ad
 - `meta/AUDIT-RUNBOOK.md`: standard checklist/cadence for process audits.
 - `meta/audits/`: timestamped audit reports (`AUDIT-YYYYMMDD.md`).
 - `scripts/validate-ticket.sh`: lightweight ticket quality gate.
+- `scripts/init-collab-ticket.sh`: bootstrap ticket + branch/report hints.
+- `scripts/run-agent-cycle.sh`: role-based cycle runner for Codex/Claude.
+- `ops/REPO-BRANCH-PLAN.md`: branch strategy for parallel collaboration.
+- `ops/HANDOFF-PROTOCOL.md`: autonomous hands-off operating loop.
+- `reports/`: Codex/Claude report templates and per-ticket outputs.
 
 ## Ticket Lifecycle (Strict)
 
@@ -128,6 +133,16 @@ New ticket filename:
 
 Example:
 `TKT-20260307-auth-timeout-handling.md`
+
+## Codex ↔ Claude Automation Workflow
+- Initialize a collaboration ticket with:
+  - `./debate/scripts/init-collab-ticket.sh <YYYYMMDD> <short-slug> [P1]`
+- Start a role cycle with:
+  - Codex: `./debate/scripts/run-agent-cycle.sh codex <ticket-id>`
+  - Claude: `./debate/scripts/run-agent-cycle.sh claude <ticket-id>`
+- Follow branch policy in `ops/REPO-BRANCH-PLAN.md`.
+- Follow autonomous loop in `ops/HANDOFF-PROTOCOL.md`.
+- Store role reports under `reports/codex/` and `reports/claude/`.
 
 ## Operating Rules
 - One ticket = one primary claim.

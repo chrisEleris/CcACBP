@@ -11,7 +11,7 @@ Use this board as the operational queue for all active tickets.
 ## Active Queue
 | Ticket ID | Status | Priority | Owner | Opened At | Last Updated | Age (days) | SLA Breached | Blocker |
 |---|---|---|---|---|---|---:|---|---|
-| _none_ | - | - | - | - | - | - | - | - |
+| `TKT-20260307-automation-smoke` | `OPEN` | `P2` | `Shared` | `2026-03-07` | `2026-03-07` | 0 | no | - |
 
 ## Recently Closed (optional)
 | Ticket ID | Final Status | Closed At | SLA Breached | Notes |

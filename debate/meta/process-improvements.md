@@ -13,7 +13,7 @@ Use this file to evolve the debate system over time.
 
 ---
 
-## Initial Baseline (v4)
+## Initial Baseline (v5)
 - Mandated evidence-first debate on every contested claim.
 - Strict status transitions to prevent ambiguous closure.
 - SLA-based ticket handling to avoid stalled debates.
@@ -26,3 +26,7 @@ Use this file to evolve the debate system over time.
 - KPI tracking guidance in `meta/metrics.md`.
 
 - Formal audit runbook and dated audit reports under `meta/audits/`.
+
+- Autonomous Codex/Claude handoff protocol in `ops/HANDOFF-PROTOCOL.md`.
+- Repo/branch collaboration plan in `ops/REPO-BRANCH-PLAN.md`.
+- Role-cycle automation scripts for ticket bootstrap and agent execution.
