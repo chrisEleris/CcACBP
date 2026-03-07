@@ -1,9 +1,19 @@
+import type { IAMUser } from "@shared/types";
 import { CheckCircle, Key, XCircle } from "lucide-react";
 import { DataTable } from "../components/DataTable";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
-import { iamUsers } from "../lib/mock-data";
+import { useFetch } from "../lib/use-fetch";
 
 export function IAMPage() {
+  const { data: iamUsers, loading, error, refetch } = useFetch<IAMUser[]>("/api/aws/iam/users");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!iamUsers || iamUsers.length === 0) return <EmptyState message="No IAM users found" />;
+
   const mfaEnabled = iamUsers.filter((u) => u.mfaEnabled).length;
   const totalKeys = iamUsers.reduce((sum, u) => sum + u.accessKeys, 0);
 

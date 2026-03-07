@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.github
+.claude
+terraform/.terraform
+terraform/**/.terraform
+*.md
+*.log

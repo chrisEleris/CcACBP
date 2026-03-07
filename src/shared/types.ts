@@ -334,3 +334,112 @@ export type ECSEvent = {
   message: string;
   type: "DEPLOYMENT" | "SCALING" | "TASK" | "ERROR";
 };
+
+// ── Deployment Strategy Types ─────────────────────────────
+
+export type DeployEnvironment = "dev" | "staging" | "prod";
+
+export type DeployStrategyType = "rolling" | "blue-green" | "canary";
+
+export type DeployStatus =
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "IN_PROGRESS"
+  | "HEALTH_CHECK"
+  | "COMPLETED"
+  | "FAILED"
+  | "ROLLED_BACK"
+  | "CANCELLED";
+
+export type DeployPipelineStage = {
+  name: string;
+  status: DeployStatus | "WAITING" | "SKIPPED";
+  startedAt: string | null;
+  completedAt: string | null;
+  approver: string | null;
+  notes: string | null;
+};
+
+export type DeployPipeline = {
+  id: string;
+  name: string;
+  service: string;
+  version: string;
+  imageTag: string;
+  strategy: DeployStrategyType;
+  currentEnv: DeployEnvironment;
+  status: DeployStatus;
+  stages: DeployPipelineStage[];
+  triggeredBy: string;
+  triggeredAt: string;
+  completedAt: string | null;
+  rollbackVersion: string | null;
+  healthChecks: DeployHealthCheck[];
+  circuitBreaker: {
+    enabled: boolean;
+    threshold: number;
+    failureCount: number;
+    triggered: boolean;
+  };
+};
+
+export type DeployHealthCheck = {
+  name: string;
+  endpoint: string;
+  status: "PASSING" | "FAILING" | "PENDING";
+  responseTime: number | null;
+  lastChecked: string | null;
+};
+
+export type EnvironmentState = {
+  env: DeployEnvironment;
+  service: string;
+  currentVersion: string;
+  imageTag: string;
+  deployedAt: string;
+  deployedBy: string;
+  taskCount: number;
+  health: "HEALTHY" | "DEGRADED" | "UNHEALTHY";
+  lastHealthCheck: string;
+};
+
+export type DeploySchedule = {
+  id: string;
+  name: string;
+  service: string;
+  targetEnv: DeployEnvironment;
+  version: string;
+  scheduledFor: string;
+  createdBy: string;
+  status: "SCHEDULED" | "EXECUTING" | "COMPLETED" | "CANCELLED";
+  maintenanceWindow: string;
+};
+
+export type DeployRollback = {
+  id: string;
+  pipelineId: string;
+  service: string;
+  env: DeployEnvironment;
+  fromVersion: string;
+  toVersion: string;
+  reason: string;
+  initiatedBy: string;
+  initiatedAt: string;
+  completedAt: string | null;
+  status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
+};
+
+// ── Report & Data Source Types ────────────────────────────
+export type DataSourceType = "cloudwatch" | "redshift" | "mysql" | "s3" | "csv";
+export type DataSourceStatus = "connected" | "disconnected" | "error";
+export type VisualizationType = "table" | "bar" | "line" | "pie" | "area" | "scatter";
+export type ReportExecutionStatus = "running" | "completed" | "failed";
+export type AiAgentType =
+  | "log-analysis"
+  | "cost-optimization"
+  | "infrastructure"
+  | "security"
+  | "report-builder"
+  | "general";
+export type ReportCategory = "cost" | "security" | "performance" | "infrastructure" | "logs";
+export type WidgetType = "chart" | "table" | "metric" | "status";

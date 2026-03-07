@@ -1,18 +1,26 @@
 import { useState } from "react";
 import "./index.css";
+import { AiDrawer } from "./components/AiDrawer";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
+import { AiAssistantPage } from "./pages/AiAssistantPage";
 import { CloudWatchPage } from "./pages/CloudWatchPage";
 import { ConnectorsPage } from "./pages/ConnectorsPage";
 import { CostPage } from "./pages/CostPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { DataSourcesPage } from "./pages/DataSourcesPage";
+import { DeploymentsPage } from "./pages/DeploymentsPage";
 import { EC2Page } from "./pages/EC2Page";
 import { ECSPage } from "./pages/ECSPage";
 import { IAMPage } from "./pages/IAMPage";
 import { JenkinsPage } from "./pages/JenkinsPage";
 import { LambdaPage } from "./pages/LambdaPage";
 import { LogExplorerPage } from "./pages/LogExplorerPage";
+import { QueryExplorerPage } from "./pages/QueryExplorerPage";
+import { ReportBuilderPage } from "./pages/ReportBuilderPage";
+import { ReportViewerPage } from "./pages/ReportViewerPage";
 import { S3Page } from "./pages/S3Page";
+import { ScheduledReportsPage } from "./pages/ScheduledReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { VPCPage } from "./pages/VPCPage";
 import { WafPage } from "./pages/WafPage";
@@ -30,18 +38,32 @@ const pageTitles: Record<string, string> = {
   "/logs": "Log Explorer",
   "/waf": "WAF Rules",
   "/jenkins": "Jenkins CI/CD",
+  "/deployments": "Deployments",
   "/connectors": "Connectors",
   "/settings": "Settings",
+  "/data-sources": "Data Sources",
+  "/reports": "Report Builder",
+  "/query": "Query Explorer",
+  "/ai": "AI Assistant",
+  "/scheduled-reports": "Scheduled Reports",
 };
 
 function App() {
   const [currentPath, setCurrentPath] = useState("/");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [viewingReportId, setViewingReportId] = useState<string | null>(null);
 
   function renderPage() {
+    if (viewingReportId) {
+      return (
+        <ReportViewerPage reportId={viewingReportId} onBack={() => setViewingReportId(null)} />
+      );
+    }
+
     switch (currentPath) {
       case "/":
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPath} />;
       case "/ec2":
         return <EC2Page />;
       case "/ecs":
@@ -64,17 +86,37 @@ function App() {
         return <WafPage />;
       case "/jenkins":
         return <JenkinsPage />;
+      case "/deployments":
+        return <DeploymentsPage />;
       case "/connectors":
         return <ConnectorsPage />;
       case "/settings":
         return <SettingsPage />;
+      case "/data-sources":
+        return <DataSourcesPage />;
+      case "/reports":
+        return <ReportBuilderPage />;
+      case "/query":
+        return <QueryExplorerPage />;
+      case "/ai":
+        return <AiAssistantPage />;
+      case "/scheduled-reports":
+        return <ScheduledReportsPage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPath} />;
     }
   }
 
+  const pageContext = currentPath === "/" ? "dashboard" : currentPath.slice(1);
+
   return (
     <div className="flex h-screen bg-gray-900">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
       {sidebarOpen && (
         <button
           type="button"
@@ -88,6 +130,7 @@ function App() {
         onNavigate={(path) => {
           setCurrentPath(path);
           setSidebarOpen(false);
+          setViewingReportId(null);
         }}
         mobileOpen={sidebarOpen}
       />
@@ -96,7 +139,14 @@ function App() {
           title={pageTitles[currentPath] ?? "Dashboard"}
           onMenuClick={() => setSidebarOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{renderPage()}</main>
+        <main id="main-content" className="relative flex-1 overflow-y-auto p-4 md:p-6">
+          {renderPage()}
+          <AiDrawer
+            pageContext={pageContext}
+            isOpen={aiDrawerOpen}
+            onToggle={() => setAiDrawerOpen(!aiDrawerOpen)}
+          />
+        </main>
       </div>
     </div>
   );

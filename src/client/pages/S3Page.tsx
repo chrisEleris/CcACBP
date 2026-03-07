@@ -1,6 +1,10 @@
+import type { S3Bucket } from "@shared/types";
 import { CheckCircle, Globe, Lock, Plus, Users, XCircle } from "lucide-react";
 import { DataTable } from "../components/DataTable";
-import { s3Buckets } from "../lib/mock-data";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
+import { useFetch } from "../lib/use-fetch";
 
 const accessIcons = {
   private: { icon: <Lock size={14} />, label: "Private", className: "text-gray-400" },
@@ -14,6 +18,12 @@ function formatSize(gb: number): string {
 }
 
 export function S3Page() {
+  const { data: s3Buckets, loading, error, refetch } = useFetch<S3Bucket[]>("/api/aws/s3/buckets");
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (!s3Buckets || s3Buckets.length === 0) return <EmptyState message="No S3 buckets found" />;
+
   const totalSize = s3Buckets.reduce((sum, b) => sum + b.sizeGb, 0);
   const totalObjects = s3Buckets.reduce((sum, b) => sum + b.objects, 0);
 
