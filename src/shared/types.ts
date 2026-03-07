@@ -428,3 +428,18 @@ export type DeployRollback = {
   completedAt: string | null;
   status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
 };
+
+// ── Report & Data Source Types ────────────────────────────
+export type DataSourceType = "cloudwatch" | "redshift" | "mysql" | "s3" | "csv";
+export type DataSourceStatus = "connected" | "disconnected" | "error";
+export type VisualizationType = "table" | "bar" | "line" | "pie" | "area" | "scatter";
+export type ReportExecutionStatus = "running" | "completed" | "failed";
+export type AiAgentType =
+  | "log-analysis"
+  | "cost-optimization"
+  | "infrastructure"
+  | "security"
+  | "report-builder"
+  | "general";
+export type ReportCategory = "cost" | "security" | "performance" | "infrastructure" | "logs";
+export type WidgetType = "chart" | "table" | "metric" | "status";

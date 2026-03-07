@@ -15,7 +15,7 @@
 | Framework | Hono | Lightweight, fast, Web Standards API |
 | Validation | Zod + @hono/zod-validator | Runtime type safety |
 | ORM | Drizzle ORM | Type-safe, SQL-like, lightweight |
-| Database | SQLite (via better-sqlite3) | Simple, file-based, zero config |
+| Database | SQLite (via @libsql/client) | Simple, file-based, zero config, pure JS driver |
 | Auth | TBD | — |
 
 ## Frontend
