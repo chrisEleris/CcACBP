@@ -1,9 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { reportExecutions, reportTemplates, savedReports } from "../db/schema";
+import { parsePagination } from "../lib/pagination";
 
 const MAX_NAME = 500;
 const MAX_QUERY = 50_000;
@@ -34,8 +35,21 @@ const updateReportSchema = z.object({
 export const reportRoutes = new Hono()
   .get("/", async (c) => {
     try {
-      const all = await db.select().from(savedReports).orderBy(desc(savedReports.createdAt));
-      return c.json({ data: all });
+      const pagination = parsePagination(c);
+      const all = await db
+        .select()
+        .from(savedReports)
+        .orderBy(desc(savedReports.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from saved_reports`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: all,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing reports:", error);
       return c.json({ message: "Failed to list reports" }, 500);
@@ -44,11 +58,21 @@ export const reportRoutes = new Hono()
 
   .get("/templates/list", async (c) => {
     try {
+      const pagination = parsePagination(c);
       const templates = await db
         .select()
         .from(reportTemplates)
-        .orderBy(desc(reportTemplates.createdAt));
-      return c.json({ data: templates });
+        .orderBy(desc(reportTemplates.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from report_templates`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: templates,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing report templates:", error);
       return c.json({ message: "Failed to list report templates" }, 500);
@@ -178,13 +202,23 @@ export const reportRoutes = new Hono()
         return c.json({ message: "Report not found" }, 404);
       }
 
+      const pagination = parsePagination(c);
       const executions = await db
         .select()
         .from(reportExecutions)
         .where(eq(reportExecutions.reportId, id))
-        .orderBy(desc(reportExecutions.executedAt));
+        .orderBy(desc(reportExecutions.executedAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from report_executions where report_id = ${id}`,
+      );
+      const total = countRow?.count ?? 0;
 
-      return c.json({ data: executions });
+      return c.json({
+        data: executions,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing report executions:", error);
       return c.json({ message: "Failed to list executions" }, 500);

@@ -1,10 +1,11 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { savedReports } from "../db/schema";
 import { type NewScheduledReport, scheduledReports } from "../db/schema-scheduled";
+import { parsePagination } from "../lib/pagination";
 
 /**
  * Basic cron expression validation.
@@ -43,6 +44,7 @@ const updateScheduleSchema = z.object({
 export const scheduledReportRoutes = new Hono()
   .get("/", async (c) => {
     try {
+      const pagination = parsePagination(c);
       const rows = await db
         .select({
           id: scheduledReports.id,
@@ -58,14 +60,24 @@ export const scheduledReportRoutes = new Hono()
         })
         .from(scheduledReports)
         .leftJoin(savedReports, eq(scheduledReports.reportId, savedReports.id))
-        .orderBy(desc(scheduledReports.createdAt));
+        .orderBy(desc(scheduledReports.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
 
       const enriched = rows.map((row) => ({
         ...row,
         reportName: row.reportName ?? null,
       }));
 
-      return c.json({ data: enriched });
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from scheduled_reports`,
+      );
+      const total = countRow?.count ?? 0;
+
+      return c.json({
+        data: enriched,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing scheduled reports:", error);
       return c.json({ message: "Failed to list scheduled reports" }, 500);

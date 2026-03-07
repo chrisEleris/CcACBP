@@ -1,9 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { dataSources } from "../db/schema";
+import { parsePagination } from "../lib/pagination";
 
 const SENSITIVE_CONFIG_KEYS = new Set([
   "password",
@@ -91,8 +92,21 @@ const updateDataSourceSchema = z.object({
 export const dataSourceRoutes = new Hono()
   .get("/", async (c) => {
     try {
-      const all = await db.select().from(dataSources).orderBy(desc(dataSources.createdAt));
-      return c.json({ data: all.map(redactDataSource) });
+      const pagination = parsePagination(c);
+      const all = await db
+        .select()
+        .from(dataSources)
+        .orderBy(desc(dataSources.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from data_sources`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: all.map(redactDataSource),
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing data sources:", error);
       return c.json({ message: "Failed to list data sources" }, 500);

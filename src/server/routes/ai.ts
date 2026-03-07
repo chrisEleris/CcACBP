@@ -1,9 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { aiConversations, aiMessages } from "../db/schema";
+import { parsePagination } from "../lib/pagination";
 
 const MAX_TITLE = 500;
 const MAX_CONTENT = 50_000;
@@ -88,13 +89,26 @@ export const aiRoutes = new Hono()
   .get("/conversations", async (c) => {
     try {
       const pageContext = c.req.query("pageContext");
+      const pagination = parsePagination(c);
       const filtered = await db
         .select()
         .from(aiConversations)
         .where(pageContext ? eq(aiConversations.pageContext, pageContext) : undefined)
-        .orderBy(desc(aiConversations.createdAt));
+        .orderBy(desc(aiConversations.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
 
-      return c.json({ data: filtered });
+      const countRow = pageContext
+        ? await db.get<{ count: number }>(
+            sql`select count(*) as count from ai_conversations where page_context = ${pageContext}`,
+          )
+        : await db.get<{ count: number }>(sql`select count(*) as count from ai_conversations`);
+      const total = countRow?.count ?? 0;
+
+      return c.json({
+        data: filtered,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing conversations:", error);
       return c.json({ message: "Failed to list conversations" }, 500);

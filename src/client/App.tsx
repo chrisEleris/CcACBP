@@ -1,29 +1,58 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import "./index.css";
 import { AiDrawer } from "./components/AiDrawer";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
-import { AiAssistantPage } from "./pages/AiAssistantPage";
-import { CloudWatchPage } from "./pages/CloudWatchPage";
-import { ConnectorsPage } from "./pages/ConnectorsPage";
-import { CostPage } from "./pages/CostPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { DataSourcesPage } from "./pages/DataSourcesPage";
-import { DeploymentsPage } from "./pages/DeploymentsPage";
-import { EC2Page } from "./pages/EC2Page";
-import { ECSPage } from "./pages/ECSPage";
-import { IAMPage } from "./pages/IAMPage";
-import { JenkinsPage } from "./pages/JenkinsPage";
-import { LambdaPage } from "./pages/LambdaPage";
-import { LogExplorerPage } from "./pages/LogExplorerPage";
-import { QueryExplorerPage } from "./pages/QueryExplorerPage";
-import { ReportBuilderPage } from "./pages/ReportBuilderPage";
-import { ReportViewerPage } from "./pages/ReportViewerPage";
-import { S3Page } from "./pages/S3Page";
-import { ScheduledReportsPage } from "./pages/ScheduledReportsPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { VPCPage } from "./pages/VPCPage";
-import { WafPage } from "./pages/WafPage";
+
+const AiAssistantPage = lazy(() =>
+  import("./pages/AiAssistantPage").then((m) => ({ default: m.AiAssistantPage })),
+);
+const CloudWatchPage = lazy(() =>
+  import("./pages/CloudWatchPage").then((m) => ({ default: m.CloudWatchPage })),
+);
+const ConnectorsPage = lazy(() =>
+  import("./pages/ConnectorsPage").then((m) => ({ default: m.ConnectorsPage })),
+);
+const CostPage = lazy(() => import("./pages/CostPage").then((m) => ({ default: m.CostPage })));
+const DashboardPage = lazy(() =>
+  import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+);
+const DataSourcesPage = lazy(() =>
+  import("./pages/DataSourcesPage").then((m) => ({ default: m.DataSourcesPage })),
+);
+const DeploymentsPage = lazy(() =>
+  import("./pages/DeploymentsPage").then((m) => ({ default: m.DeploymentsPage })),
+);
+const EC2Page = lazy(() => import("./pages/EC2Page").then((m) => ({ default: m.EC2Page })));
+const ECSPage = lazy(() => import("./pages/ECSPage").then((m) => ({ default: m.ECSPage })));
+const IAMPage = lazy(() => import("./pages/IAMPage").then((m) => ({ default: m.IAMPage })));
+const JenkinsPage = lazy(() =>
+  import("./pages/JenkinsPage").then((m) => ({ default: m.JenkinsPage })),
+);
+const LambdaPage = lazy(() =>
+  import("./pages/LambdaPage").then((m) => ({ default: m.LambdaPage })),
+);
+const LogExplorerPage = lazy(() =>
+  import("./pages/LogExplorerPage").then((m) => ({ default: m.LogExplorerPage })),
+);
+const QueryExplorerPage = lazy(() =>
+  import("./pages/QueryExplorerPage").then((m) => ({ default: m.QueryExplorerPage })),
+);
+const ReportBuilderPage = lazy(() =>
+  import("./pages/ReportBuilderPage").then((m) => ({ default: m.ReportBuilderPage })),
+);
+const ReportViewerPage = lazy(() =>
+  import("./pages/ReportViewerPage").then((m) => ({ default: m.ReportViewerPage })),
+);
+const S3Page = lazy(() => import("./pages/S3Page").then((m) => ({ default: m.S3Page })));
+const ScheduledReportsPage = lazy(() =>
+  import("./pages/ScheduledReportsPage").then((m) => ({ default: m.ScheduledReportsPage })),
+);
+const SettingsPage = lazy(() =>
+  import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })),
+);
+const VPCPage = lazy(() => import("./pages/VPCPage").then((m) => ({ default: m.VPCPage })));
+const WafPage = lazy(() => import("./pages/WafPage").then((m) => ({ default: m.WafPage })));
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -140,7 +169,15 @@ function App() {
           onMenuClick={() => setSidebarOpen(true)}
         />
         <main id="main-content" className="relative flex-1 overflow-y-auto p-4 md:p-6">
-          {renderPage()}
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+              </div>
+            }
+          >
+            {renderPage()}
+          </Suspense>
           <AiDrawer
             pageContext={pageContext}
             isOpen={aiDrawerOpen}

@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
 import { querySnippets } from "../db/schema";
+import { parsePagination } from "../lib/pagination";
 
 const MAX_SQL = 50_000;
 const MAX_NAME = 500;
@@ -87,8 +88,21 @@ export const queryRoutes = new Hono()
 
   .get("/snippets", async (c) => {
     try {
-      const snippets = await db.select().from(querySnippets).orderBy(desc(querySnippets.createdAt));
-      return c.json({ data: snippets });
+      const pagination = parsePagination(c);
+      const snippets = await db
+        .select()
+        .from(querySnippets)
+        .orderBy(desc(querySnippets.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset);
+      const countRow = await db.get<{ count: number }>(
+        sql`select count(*) as count from query_snippets`,
+      );
+      const total = countRow?.count ?? 0;
+      return c.json({
+        data: snippets,
+        pagination: { limit: pagination.limit, offset: pagination.offset, total },
+      });
     } catch (error) {
       console.error("Error listing query snippets:", error);
       return c.json({ message: "Failed to list snippets" }, 500);
