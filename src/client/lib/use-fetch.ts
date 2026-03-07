@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchApi } from "./api";
 
 type FetchState<T> = {
@@ -12,25 +12,39 @@ export function useFetch<T>(path: string): FetchState<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(() => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setError(null);
-    fetchApi<T>(path)
+    fetchApi<T>(path, controller.signal)
       .then((result) => {
-        setData(result.data);
-        if (result.error) setError(result.error);
+        if (!controller.signal.aborted) {
+          setData(result.data);
+          if (result.error) setError(result.error);
+        }
       })
       .catch((err: Error) => {
-        setError(err.message);
+        if (!controller.signal.aborted) {
+          setError(err.message);
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
   }, [path]);
 
   useEffect(() => {
     fetchData();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [fetchData]);
 
   return { data, loading, error, refetch: fetchData };

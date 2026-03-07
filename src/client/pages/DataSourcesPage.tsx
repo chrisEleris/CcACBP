@@ -239,7 +239,13 @@ export function DataSourcesPage() {
 
       {/* Create Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          aria-labelledby="datasource-modal-title"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") handleCloseModal();
+          }}
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -251,7 +257,9 @@ export function DataSourcesPage() {
           {/* Modal panel */}
           <div className="relative z-10 w-full max-w-md rounded-2xl border border-gray-700/50 bg-gray-900 p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Add Data Source</h2>
+              <h2 id="datasource-modal-title" className="text-lg font-semibold text-white">
+                Add Data Source
+              </h2>
               <button
                 type="button"
                 onClick={handleCloseModal}

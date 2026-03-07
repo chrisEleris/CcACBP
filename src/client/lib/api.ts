@@ -4,8 +4,8 @@ type ApiResponse<T> = {
   message?: string;
 };
 
-export async function fetchApi<T>(path: string): Promise<ApiResponse<T>> {
-  const response = await fetch(path);
+export async function fetchApi<T>(path: string, signal?: AbortSignal): Promise<ApiResponse<T>> {
+  const response = await fetch(path, { signal });
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }

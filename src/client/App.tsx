@@ -111,6 +111,12 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-900">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
       {sidebarOpen && (
         <button
           type="button"
@@ -133,7 +139,7 @@ function App() {
           title={pageTitles[currentPath] ?? "Dashboard"}
           onMenuClick={() => setSidebarOpen(true)}
         />
-        <main className="relative flex-1 overflow-y-auto p-4 md:p-6">
+        <main id="main-content" className="relative flex-1 overflow-y-auto p-4 md:p-6">
           {renderPage()}
           <AiDrawer
             pageContext={pageContext}

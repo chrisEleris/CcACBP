@@ -214,25 +214,46 @@ export function ScheduledReportsPage() {
           <table className="min-w-[800px] w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-700/50">
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Report
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Schedule
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Format
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Last Run
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Next Run
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Enabled
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase"
+                >
                   Actions
                 </th>
               </tr>
@@ -343,7 +364,13 @@ export function ScheduledReportsPage() {
 
       {/* Create / Edit modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          aria-labelledby="schedule-modal-title"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") handleCloseModal();
+          }}
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -355,7 +382,7 @@ export function ScheduledReportsPage() {
           {/* Panel */}
           <div className="relative z-10 w-full max-w-md rounded-2xl border border-gray-700/50 bg-gray-900 p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 id="schedule-modal-title" className="text-lg font-semibold text-white">
                 {editingId ? "Edit Schedule" : "Create Schedule"}
               </h2>
               <button

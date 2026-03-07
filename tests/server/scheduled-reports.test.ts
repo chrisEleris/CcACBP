@@ -56,6 +56,12 @@ type RunBody = {
   };
 };
 
+type DeleteBody = {
+  data: {
+    message: string;
+  };
+};
+
 type ErrorBody = {
   message: string;
 };
@@ -147,6 +153,45 @@ describe("Scheduled Reports API routes", () => {
       expect(typeof found.createdAt).toBe("string");
       expect(typeof found.updatedAt).toBe("string");
     });
+
+    it("returns the most recently created schedule first (descending createdAt order)", async () => {
+      const reportIdA = await createReport("Order Report A");
+      const reportIdB = await createReport("Order Report B");
+
+      // Small delay to guarantee distinct createdAt values
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      await createSchedule(reportIdA, "0 1 * * *");
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      await createSchedule(reportIdB, "0 2 * * *");
+
+      const res = await app.request("/api/scheduled-reports");
+      const body = (await res.json()) as ScheduledReportListBody;
+
+      const indexA = body.data.findIndex((r) => r.reportId === reportIdA);
+      const indexB = body.data.findIndex((r) => r.reportId === reportIdB);
+
+      expect(indexA).toBeGreaterThan(-1);
+      expect(indexB).toBeGreaterThan(-1);
+      // B was created after A, so it must appear earlier in the sorted list
+      expect(indexB).toBeLessThan(indexA);
+    });
+
+    it("returns createdAt and updatedAt as ISO-like strings", async () => {
+      const reportId = await createReport("ISO Timestamp Report");
+      await createSchedule(reportId, "0 3 * * *");
+
+      const res = await app.request("/api/scheduled-reports");
+      const body = (await res.json()) as ScheduledReportListBody;
+
+      const found = body.data.find((r) => r.reportId === reportId);
+      expect(found).toBeDefined();
+      if (!found) return;
+
+      // Both timestamps must be non-empty strings parseable as dates
+      expect(new Date(found.createdAt).toString()).not.toBe("Invalid Date");
+      expect(new Date(found.updatedAt).toString()).not.toBe("Invalid Date");
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -213,6 +258,24 @@ describe("Scheduled Reports API routes", () => {
       expect(body.data.enabled).toBe(false);
     });
 
+    it("accepts enabled: true explicitly", async () => {
+      const reportId = await createReport("Explicit Enabled True Report");
+
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "0 0 * * 1",
+          enabled: true,
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as ScheduledReportBody;
+      expect(body.data.enabled).toBe(true);
+    });
+
     it("accepts nextRunAt when provided", async () => {
       const reportId = await createReport("NextRunAt Report");
       const nextRunAt = "2026-04-01T09:00:00.000Z";
@@ -230,6 +293,18 @@ describe("Scheduled Reports API routes", () => {
       expect(res.status).toBe(201);
       const body = (await res.json()) as ScheduledReportBody;
       expect(body.data.nextRunAt).toBe(nextRunAt);
+    });
+
+    it("sets nextRunAt to null when not provided", async () => {
+      const reportId = await createReport("No NextRunAt Report");
+      const body = await createSchedule(reportId);
+      expect(body.data.nextRunAt).toBeNull();
+    });
+
+    it("sets lastRunAt to null on creation", async () => {
+      const reportId = await createReport("Initial LastRunAt Report");
+      const body = await createSchedule(reportId);
+      expect(body.data.lastRunAt).toBeNull();
     });
 
     it("accepts all valid format values", async () => {
@@ -295,6 +370,31 @@ describe("Scheduled Reports API routes", () => {
         body: JSON.stringify({ reportId: "", cronExpression: "0 9 * * *" }),
       });
       expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression is an empty string", async () => {
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId: "some-id", cronExpression: "" }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns a new unique id for each created schedule", async () => {
+      const reportId = await createReport("Unique ID Report");
+      const first = await createSchedule(reportId, "0 1 * * *");
+      const second = await createSchedule(reportId, "0 2 * * *");
+      expect(first.data.id).not.toBe(second.data.id);
+    });
+
+    it("returns createdAt and updatedAt as non-empty strings on creation", async () => {
+      const reportId = await createReport("Timestamps On Create Report");
+      const body = await createSchedule(reportId);
+      expect(typeof body.data.createdAt).toBe("string");
+      expect(body.data.createdAt.length).toBeGreaterThan(0);
+      expect(typeof body.data.updatedAt).toBe("string");
+      expect(body.data.updatedAt.length).toBeGreaterThan(0);
     });
   });
 
@@ -398,6 +498,137 @@ describe("Scheduled Reports API routes", () => {
 
       expect(res.status).toBe(400);
     });
+
+    it("updates multiple fields in a single PUT request", async () => {
+      const reportId = await createReport("Multi-field Update Report");
+      const created = await createSchedule(reportId, "0 9 * * *", "json");
+      const schedId = created.data.id;
+
+      const res = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cronExpression: "0 20 * * 6",
+          format: "pdf",
+          enabled: false,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as ScheduledReportBody;
+      expect(body.data.cronExpression).toBe("0 20 * * 6");
+      expect(body.data.format).toBe("pdf");
+      expect(body.data.enabled).toBe(false);
+    });
+
+    it("sets nextRunAt via update", async () => {
+      const reportId = await createReport("Set NextRunAt Via Update Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+      expect(created.data.nextRunAt).toBeNull();
+
+      const nextRunAt = "2026-06-15T08:00:00.000Z";
+      const res = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextRunAt }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as ScheduledReportBody;
+      expect(body.data.nextRunAt).toBe(nextRunAt);
+    });
+
+    it("clears nextRunAt by setting it to null", async () => {
+      const reportId = await createReport("Clear NextRunAt Report");
+      const nextRunAt = "2026-07-01T00:00:00.000Z";
+
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "0 0 * * *",
+          nextRunAt,
+        }),
+      });
+      expect(res.status).toBe(201);
+      const created = (await res.json()) as ScheduledReportBody;
+      expect(created.data.nextRunAt).toBe(nextRunAt);
+      const schedId = created.data.id;
+
+      const clearRes = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextRunAt: null }),
+      });
+
+      expect(clearRes.status).toBe(200);
+      const cleared = (await clearRes.json()) as ScheduledReportBody;
+      expect(cleared.data.nextRunAt).toBeNull();
+    });
+
+    it("preserves unchanged fields after a partial update", async () => {
+      const reportId = await createReport("Preserve Fields Report");
+      const created = await createSchedule(reportId, "0 9 * * *", "csv");
+      const schedId = created.data.id;
+
+      // Only update cronExpression; format and enabled must remain unchanged
+      const res = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronExpression: "0 10 * * *" }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as ScheduledReportBody;
+      expect(body.data.format).toBe("csv");
+      expect(body.data.enabled).toBe(true);
+      expect(body.data.reportId).toBe(reportId);
+    });
+
+    it("re-enables a previously disabled schedule", async () => {
+      const reportId = await createReport("Re-enable Schedule Report");
+
+      const createRes = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          cronExpression: "0 5 * * *",
+          enabled: false,
+        }),
+      });
+      const created = (await createRes.json()) as ScheduledReportBody;
+      expect(created.data.enabled).toBe(false);
+      const schedId = created.data.id;
+
+      const enableRes = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: true }),
+      });
+
+      expect(enableRes.status).toBe(200);
+      const body = (await enableRes.json()) as ScheduledReportBody;
+      expect(body.data.enabled).toBe(true);
+    });
+
+    it("keeps id unchanged after update", async () => {
+      const reportId = await createReport("Stable ID Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+
+      const res = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronExpression: "0 7 * * *" }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as ScheduledReportBody;
+      expect(body.data.id).toBe(schedId);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -440,6 +671,48 @@ describe("Scheduled Reports API routes", () => {
         method: "DELETE",
       });
       expect(second.status).toBe(404);
+    });
+
+    it("returns a success message in the response body after deletion", async () => {
+      const reportId = await createReport("Delete Body Check Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+
+      const res = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "DELETE",
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as DeleteBody;
+      expect(typeof body.data.message).toBe("string");
+      expect(body.data.message.length).toBeGreaterThan(0);
+    });
+
+    it("deleted schedule no longer appears in the list", async () => {
+      const reportId = await createReport("Removed From List Report");
+      const created = await createSchedule(reportId, "0 4 * * *");
+      const schedId = created.data.id;
+
+      const beforeDelete = await app.request("/api/scheduled-reports");
+      const beforeList = (await beforeDelete.json()) as ScheduledReportListBody;
+      expect(beforeList.data.some((r) => r.id === schedId)).toBe(true);
+
+      await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "DELETE",
+      });
+
+      const afterDelete = await app.request("/api/scheduled-reports");
+      const afterList = (await afterDelete.json()) as ScheduledReportListBody;
+      expect(afterList.data.some((r) => r.id === schedId)).toBe(false);
+    });
+
+    it("returns a 404 error message string for missing id", async () => {
+      const res = await app.request("/api/scheduled-reports/00000000-0000-0000-0000-000000000099", {
+        method: "DELETE",
+      });
+      const body = (await res.json()) as ErrorBody;
+      expect(typeof body.message).toBe("string");
+      expect(body.message.length).toBeGreaterThan(0);
     });
   });
 
@@ -520,6 +793,72 @@ describe("Scheduled Reports API routes", () => {
       expect(body.data.schedule.id).toBe(schedId);
       expect(body.data.schedule.reportId).toBe(reportId);
     });
+
+    it("updates updatedAt on the schedule record after a run", async () => {
+      const reportId = await createReport("Run UpdatedAt Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+      const originalUpdatedAt = created.data.updatedAt;
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+      const res = await app.request(`/api/scheduled-reports/${schedId}/run`, {
+        method: "POST",
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as RunBody;
+      expect(body.data.schedule.updatedAt).not.toBe(originalUpdatedAt);
+    });
+
+    it("sets lastRunAt equal to triggeredAt in the response", async () => {
+      const reportId = await createReport("LastRunAt Equals TriggeredAt Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+
+      const res = await app.request(`/api/scheduled-reports/${schedId}/run`, {
+        method: "POST",
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as RunBody;
+      expect(body.data.schedule.lastRunAt).toBe(body.data.triggeredAt);
+    });
+
+    it("updates lastRunAt on every successive manual run", async () => {
+      const reportId = await createReport("Successive Runs Report");
+      const created = await createSchedule(reportId);
+      const schedId = created.data.id;
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      const firstRes = await app.request(`/api/scheduled-reports/${schedId}/run`, {
+        method: "POST",
+      });
+      const firstBody = (await firstRes.json()) as RunBody;
+      const firstRunAt = firstBody.data.schedule.lastRunAt;
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      const secondRes = await app.request(`/api/scheduled-reports/${schedId}/run`, {
+        method: "POST",
+      });
+      const secondBody = (await secondRes.json()) as RunBody;
+      const secondRunAt = secondBody.data.schedule.lastRunAt;
+
+      expect(firstRunAt).not.toBeNull();
+      expect(secondRunAt).not.toBeNull();
+      // Second run must be strictly later than first
+      expect(String(secondRunAt) > String(firstRunAt)).toBe(true);
+    });
+
+    it("returns a 404 error message string for a missing id", async () => {
+      const res = await app.request(
+        "/api/scheduled-reports/00000000-0000-0000-0000-000000000099/run",
+        { method: "POST" },
+      );
+      const body = (await res.json()) as ErrorBody;
+      expect(typeof body.message).toBe("string");
+      expect(body.message.length).toBeGreaterThan(0);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -584,6 +923,51 @@ describe("Scheduled Reports API routes", () => {
         method: "DELETE",
       });
       expect(notFoundRes.status).toBe(404);
+    });
+
+    it("create → run twice → verify lastRunAt advances", async () => {
+      const reportId = await createReport("Double Run Cycle Report");
+      const created = await createSchedule(reportId, "0 0 * * *", "xlsx");
+      const schedId = created.data.id;
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      const runOne = await app.request(`/api/scheduled-reports/${schedId}/run`, { method: "POST" });
+      const runOneBody = (await runOne.json()) as RunBody;
+      const firstLastRunAt = runOneBody.data.schedule.lastRunAt;
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      const runTwo = await app.request(`/api/scheduled-reports/${schedId}/run`, { method: "POST" });
+      const runTwoBody = (await runTwo.json()) as RunBody;
+      const secondLastRunAt = runTwoBody.data.schedule.lastRunAt;
+
+      expect(firstLastRunAt).not.toBeNull();
+      expect(secondLastRunAt).not.toBeNull();
+      expect(String(secondLastRunAt) > String(firstLastRunAt)).toBe(true);
+    });
+
+    it("create → update reportId → verify change persists in list", async () => {
+      const reportIdA = await createReport("Original Report For ReportId Update");
+      const reportIdB = await createReport("New Report For ReportId Update");
+
+      const created = await createSchedule(reportIdA, "0 9 * * *");
+      const schedId = created.data.id;
+      expect(created.data.reportId).toBe(reportIdA);
+
+      const updateRes = await app.request(`/api/scheduled-reports/${schedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId: reportIdB }),
+      });
+      expect(updateRes.status).toBe(200);
+      const updated = (await updateRes.json()) as ScheduledReportBody;
+      expect(updated.data.reportId).toBe(reportIdB);
+
+      // Confirm list reflects the new reportId and the new reportName
+      const listRes = await app.request("/api/scheduled-reports");
+      const list = (await listRes.json()) as ScheduledReportListBody;
+      const found = list.data.find((r) => r.id === schedId);
+      expect(found?.reportId).toBe(reportIdB);
+      expect(found?.reportName).toBe("New Report For ReportId Update");
     });
   });
 });

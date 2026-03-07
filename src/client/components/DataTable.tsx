@@ -24,6 +24,7 @@ export function DataTable<T>({ columns, data, keyExtractor, caption }: DataTable
             {columns.map((col) => (
               <th
                 key={col.key}
+                scope="col"
                 className={`whitespace-nowrap px-4 py-3 text-xs font-medium tracking-wider text-gray-400 uppercase ${col.className ?? ""}`}
               >
                 {col.header}
