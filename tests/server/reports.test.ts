@@ -35,6 +35,32 @@ describe("Report API routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("POST /api/reports rejects invalid visualization type", async () => {
+    const res = await app.request("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Bad Viz",
+        query: "SELECT 1",
+        visualization: "heatmap",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/reports rejects empty name", async () => {
+    const res = await app.request("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "",
+        query: "SELECT 1",
+        visualization: "table",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("POST /api/reports/:id/execute creates an execution record", async () => {
     // Create a report first
     const createRes = await app.request("/api/reports", {

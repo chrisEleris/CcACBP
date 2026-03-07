@@ -36,6 +36,32 @@ describe("Data Source API routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("POST /api/data-sources rejects invalid type enum value", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Bad Type",
+        type: "postgresql",
+        config: JSON.stringify({ host: "localhost" }),
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/data-sources rejects empty name", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "",
+        type: "mysql",
+        config: JSON.stringify({ host: "localhost" }),
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("POST /api/data-sources/:id/test updates connection status", async () => {
     // Create a source first
     const createRes = await app.request("/api/data-sources", {

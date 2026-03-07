@@ -97,4 +97,31 @@ describe("Query API routes", () => {
     });
     expect(deleteRes.status).toBe(200);
   });
+
+  it("DELETE /api/query/snippets/:id returns 404 for non-existent snippet", async () => {
+    const res = await app.request("/api/query/snippets/non-existent-id", {
+      method: "DELETE",
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.message).toBe("Snippet not found");
+  });
+
+  it("POST /api/query/snippets validates required name field", async () => {
+    const res = await app.request("/api/query/snippets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sql: "SELECT 1" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/query/snippets validates required sql field", async () => {
+    const res = await app.request("/api/query/snippets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Missing SQL" }),
+    });
+    expect(res.status).toBe(400);
+  });
 });
