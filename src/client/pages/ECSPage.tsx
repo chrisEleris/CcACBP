@@ -33,19 +33,9 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { StatCard } from "../components/StatCard";
 import { useFetch } from "../lib/use-fetch";
+import { timeAgo } from "../utils/time";
 
 // ── Helpers ───────────────────────────────────────────────
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 function taskStatusColor(status: ECSTaskStatus): string {
   const map: Record<ECSTaskStatus, string> = {

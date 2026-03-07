@@ -1,6 +1,8 @@
 import type { JenkinsBuildStatus, JenkinsJob } from "@shared/types";
 import type { DeployConfig } from "@shared/types";
 
+export { timeAgo } from "../../utils/time";
+
 export function formatDuration(ms: number): string {
   if (ms === 0) return "-";
   const totalSeconds = Math.floor(ms / 1000);
@@ -8,19 +10,6 @@ export function formatDuration(ms: number): string {
   const seconds = totalSeconds % 60;
   if (minutes === 0) return `${seconds}s`;
   return `${minutes}m ${seconds}s`;
-}
-
-export function timeAgo(timestamp: string): string {
-  const now = new Date("2026-03-01T11:00:00Z").getTime();
-  const then = new Date(timestamp).getTime();
-  const diffMs = now - then;
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMinutes < 1) return "just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${diffDays}d ago`;
 }
 
 export const statusStyles: Record<JenkinsBuildStatus, string> = {

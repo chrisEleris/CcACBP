@@ -117,7 +117,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
+      void err;
       setActionError("Failed to test connection. Please try again.");
     } finally {
       setTestingId(null);
@@ -134,7 +134,7 @@ export function DataSourcesPage() {
       }
       refetch();
     } catch (err) {
-      console.error("Operation failed:", err);
+      void err;
       setActionError("Failed to delete. Please try again.");
     } finally {
       setDeletingId(null);
@@ -245,9 +245,10 @@ export function DataSourcesPage() {
 
       {/* Create Modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <dialog
+          open
           aria-labelledby="datasource-modal-title"
+          className="fixed inset-0 z-50 m-0 flex h-full w-full items-center justify-center border-none bg-transparent p-4"
           onKeyDown={(e) => {
             if (e.key === "Escape") handleCloseModal();
           }}
@@ -362,7 +363,7 @@ export function DataSourcesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );
