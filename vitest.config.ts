@@ -14,6 +14,13 @@ export default defineConfig({
     globals: false,
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Run test files sequentially to avoid SQLite locking conflicts
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts", "src/**/*.tsx"],
