@@ -5,17 +5,13 @@ import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useFetch } from "../lib/use-fetch";
+import { formatSizeGb } from "../utils/format";
 
 const accessIcons = {
   private: { icon: <Lock size={14} />, label: "Private", className: "text-gray-400" },
   "public-read": { icon: <Globe size={14} />, label: "Public", className: "text-yellow-400" },
   "authenticated-read": { icon: <Users size={14} />, label: "Auth", className: "text-blue-400" },
 };
-
-function formatSize(gb: number): string {
-  if (gb >= 1000) return `${(gb / 1000).toFixed(1)} TB`;
-  return `${gb.toFixed(1)} GB`;
-}
 
 export function S3Page() {
   const { data: s3Buckets, loading, error, refetch } = useFetch<S3Bucket[]>("/api/aws/s3/buckets");
@@ -32,7 +28,7 @@ export function S3Page() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">
-            {s3Buckets.length} buckets — {formatSize(totalSize)} — {totalObjects.toLocaleString()}{" "}
+            {s3Buckets.length} buckets — {formatSizeGb(totalSize)} — {totalObjects.toLocaleString()}{" "}
             objects
           </span>
         </div>
@@ -63,7 +59,7 @@ export function S3Page() {
           {
             key: "size",
             header: "Size",
-            render: (b) => formatSize(b.sizeGb),
+            render: (b) => formatSizeGb(b.sizeGb),
           },
           {
             key: "objects",

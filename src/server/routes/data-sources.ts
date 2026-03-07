@@ -19,21 +19,31 @@ const SENSITIVE_CONFIG_KEYS = new Set([
 ]);
 
 /**
+ * Recursively redacts sensitive fields from an object.
+ * Replaces values of known credential keys with "***REDACTED***" at any depth.
+ */
+function redactObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const redacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (SENSITIVE_CONFIG_KEYS.has(key)) {
+      redacted[key] = "***REDACTED***";
+    } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      redacted[key] = redactObject(value as Record<string, unknown>);
+    } else {
+      redacted[key] = value;
+    }
+  }
+  return redacted;
+}
+
+/**
  * Redacts sensitive fields from a data source config JSON string.
- * Replaces values of known credential keys with "***REDACTED***".
+ * Replaces values of known credential keys with "***REDACTED***" at any nesting depth.
  */
 function redactConfig(configStr: string): string {
   try {
     const parsed = JSON.parse(configStr) as Record<string, unknown>;
-    const redacted: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(parsed)) {
-      if (SENSITIVE_CONFIG_KEYS.has(key)) {
-        redacted[key] = "***REDACTED***";
-      } else {
-        redacted[key] = value;
-      }
-    }
-    return JSON.stringify(redacted);
+    return JSON.stringify(redactObject(parsed));
   } catch {
     return configStr;
   }
@@ -45,17 +55,20 @@ function redactDataSource(row: DataSourceRow): DataSourceRow {
   return { ...row, config: redactConfig(row.config) };
 }
 
+const MAX_NAME = 500;
+const MAX_CONFIG = 10_000;
+
 const createDataSourceSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(MAX_NAME),
   type: z.enum(["cloudwatch", "redshift", "mysql", "s3", "csv"]),
-  config: z.string().min(1),
+  config: z.string().min(1).max(MAX_CONFIG),
   status: z.enum(["connected", "disconnected", "error"]).optional(),
 });
 
 const updateDataSourceSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).max(MAX_NAME).optional(),
   type: z.enum(["cloudwatch", "redshift", "mysql", "s3", "csv"]).optional(),
-  config: z.string().min(1).optional(),
+  config: z.string().min(1).max(MAX_CONFIG).optional(),
   status: z.enum(["connected", "disconnected", "error"]).optional(),
 });
 

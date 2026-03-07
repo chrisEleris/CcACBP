@@ -25,19 +25,19 @@ const cronExpression = z
   );
 
 const createScheduleSchema = z.object({
-  reportId: z.string().min(1),
+  reportId: z.string().min(1).max(200),
   cronExpression,
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
-  nextRunAt: z.string().optional(),
+  nextRunAt: z.string().max(100).optional(),
 });
 
 const updateScheduleSchema = z.object({
-  reportId: z.string().min(1).optional(),
+  reportId: z.string().min(1).max(200).optional(),
   cronExpression: cronExpression.optional(),
   enabled: z.boolean().optional(),
   format: z.enum(["json", "csv", "pdf", "xlsx"]).optional(),
-  nextRunAt: z.string().nullable().optional(),
+  nextRunAt: z.string().max(100).nullable().optional(),
 });
 
 export const scheduledReportRoutes = new Hono()

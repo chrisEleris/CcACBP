@@ -5,9 +5,13 @@ import { z } from "zod";
 import { db } from "../db/index";
 import { aiConversations, aiMessages } from "../db/schema";
 
+const MAX_TITLE = 500;
+const MAX_CONTENT = 50_000;
+const MAX_CONTEXT = 200;
+
 const createConversationSchema = z.object({
-  title: z.string().min(1),
-  pageContext: z.string().min(1),
+  title: z.string().min(1).max(MAX_TITLE),
+  pageContext: z.string().min(1).max(MAX_CONTEXT),
   agentType: z
     .enum([
       "log-analysis",
@@ -22,13 +26,13 @@ const createConversationSchema = z.object({
 
 const addMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().min(1),
-  metadata: z.string().optional(),
+  content: z.string().min(1).max(MAX_CONTENT),
+  metadata: z.string().max(MAX_CONTENT).optional(),
 });
 
 const analyzeSchema = z.object({
-  prompt: z.string().min(1),
-  pageContext: z.string().min(1),
+  prompt: z.string().min(1).max(MAX_CONTENT),
+  pageContext: z.string().min(1).max(MAX_CONTEXT),
   agentType: z
     .enum([
       "log-analysis",

@@ -5,16 +5,19 @@ import { z } from "zod";
 import { db } from "../db/index";
 import { querySnippets } from "../db/schema";
 
+const MAX_SQL = 50_000;
+const MAX_NAME = 500;
+
 const executeQuerySchema = z.object({
-  sql: z.string().min(1),
-  dataSourceId: z.string().optional(),
+  sql: z.string().min(1).max(MAX_SQL),
+  dataSourceId: z.string().max(200).optional(),
 });
 
 const createSnippetSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  sql: z.string().min(1),
-  dataSourceId: z.string().optional(),
+  name: z.string().min(1).max(MAX_NAME),
+  description: z.string().max(MAX_NAME).optional(),
+  sql: z.string().min(1).max(MAX_SQL),
+  dataSourceId: z.string().max(200).optional(),
 });
 
 type SchemaColumn = {

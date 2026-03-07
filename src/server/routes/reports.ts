@@ -5,26 +5,30 @@ import { z } from "zod";
 import { db } from "../db/index";
 import { reportExecutions, reportTemplates, savedReports } from "../db/schema";
 
+const MAX_NAME = 500;
+const MAX_QUERY = 50_000;
+const MAX_JSON_CONFIG = 10_000;
+
 const createReportSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  query: z.string().min(1),
+  name: z.string().min(1).max(MAX_NAME),
+  description: z.string().max(MAX_NAME).optional(),
+  query: z.string().min(1).max(MAX_QUERY),
   visualization: z.enum(["table", "bar", "line", "pie", "area", "scatter"]).optional(),
-  chartConfig: z.string().optional(),
-  layout: z.string().optional(),
-  parameters: z.string().optional(),
-  dataSourceId: z.string().optional(),
+  chartConfig: z.string().max(MAX_JSON_CONFIG).optional(),
+  layout: z.string().max(MAX_JSON_CONFIG).optional(),
+  parameters: z.string().max(MAX_JSON_CONFIG).optional(),
+  dataSourceId: z.string().max(200).optional(),
 });
 
 const updateReportSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  query: z.string().min(1).optional(),
+  name: z.string().min(1).max(MAX_NAME).optional(),
+  description: z.string().max(MAX_NAME).optional(),
+  query: z.string().min(1).max(MAX_QUERY).optional(),
   visualization: z.enum(["table", "bar", "line", "pie", "area", "scatter"]).optional(),
-  chartConfig: z.string().optional(),
-  layout: z.string().optional(),
-  parameters: z.string().optional(),
-  dataSourceId: z.string().nullable().optional(),
+  chartConfig: z.string().max(MAX_JSON_CONFIG).optional(),
+  layout: z.string().max(MAX_JSON_CONFIG).optional(),
+  parameters: z.string().max(MAX_JSON_CONFIG).optional(),
+  dataSourceId: z.string().max(200).nullable().optional(),
 });
 
 export const reportRoutes = new Hono()

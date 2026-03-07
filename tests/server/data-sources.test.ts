@@ -317,4 +317,32 @@ describe("Data Source API routes", () => {
     expect(config.secret).toBe("***REDACTED***");
     expect(config.token).toBe("***REDACTED***");
   });
+
+  it("POST /api/data-sources redacts sensitive config fields in nested objects", async () => {
+    const res = await app.request("/api/data-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Nested Redaction Test",
+        type: "mysql",
+        config: JSON.stringify({
+          host: "db.example.com",
+          database: {
+            name: "mydb",
+            password: "nested-secret",
+            credentials: "nested-creds",
+          },
+          port: 3306,
+        }),
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    const config = JSON.parse(body.data.config);
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(3306);
+    expect(config.database.name).toBe("mydb");
+    expect(config.database.password).toBe("***REDACTED***");
+    expect(config.database.credentials).toBe("***REDACTED***");
+  });
 });

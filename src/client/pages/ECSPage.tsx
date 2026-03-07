@@ -354,6 +354,7 @@ function ServiceRow({
     <Fragment>
       <tr
         className="cursor-pointer border-b border-gray-700/30 transition-colors hover:bg-white/[0.02]"
+        tabIndex={0}
         onClick={onToggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {

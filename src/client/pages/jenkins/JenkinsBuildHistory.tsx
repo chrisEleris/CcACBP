@@ -61,6 +61,7 @@ export function JenkinsBuildHistory({ jobName, builds, onClose }: JenkinsBuildHi
               <Fragment key={build.number}>
                 <tr
                   className="transition-colors hover:bg-white/[0.02] cursor-pointer"
+                  tabIndex={0}
                   onClick={() =>
                     setExpandedBuild(expandedBuild === build.number ? null : build.number)
                   }
