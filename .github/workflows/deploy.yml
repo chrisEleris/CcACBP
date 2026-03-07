@@ -64,8 +64,17 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/dev
-          cp -r main-src/dist/public/* _site/
-          cp -r dev-src/dist/public/* _site/dev/
+          # main outputs to dist/ (vite default), claude/dev outputs to dist/public/
+          if [ -d main-src/dist/public ]; then
+            cp -r main-src/dist/public/* _site/
+          else
+            cp -r main-src/dist/* _site/
+          fi
+          if [ -d dev-src/dist/public ]; then
+            cp -r dev-src/dist/public/* _site/dev/
+          else
+            cp -r dev-src/dist/* _site/dev/
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
