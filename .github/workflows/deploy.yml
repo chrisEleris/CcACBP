@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, claude/dev]
   workflow_dispatch:
 
 permissions:
@@ -47,7 +47,7 @@ jobs:
       - name: Checkout dev
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: claude/dev
           path: dev-src
 
       - name: Install dev dependencies

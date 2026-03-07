@@ -855,11 +855,11 @@ function calculateTotal(basePrice: number, taxRate: number): number {
 ### 13.1 Branch Strategy
 
 ```
-main  ← production (auto-deploys to GitHub Pages root)
+main        ← production (auto-deploys to GitHub Pages root)
  │
-dev   ← integration / preview (auto-deploys to /dev/ path)
+claude/dev  ← integration / preview (auto-deploys to /dev/ path)
  │
- └── feature/issue-{n}-{desc}  ← working branches
+ └── claude/feature-{desc}-{id}  ← working branches
 ```
 
 **Live URLs (auto-deployed on push):**
@@ -867,7 +867,7 @@ dev   ← integration / preview (auto-deploys to /dev/ path)
 | Branch | URL | Purpose |
 |--------|-----|---------|
 | `main` | `https://chrisEleris.github.io/CcACBP/` | Production |
-| `dev` | `https://chrisEleris.github.io/CcACBP/dev/` | Preview / QA |
+| `claude/dev` | `https://chrisEleris.github.io/CcACBP/dev/` | Preview / QA |
 
 ### 13.2 Feature Development Workflow
 
@@ -875,7 +875,7 @@ dev   ← integration / preview (auto-deploys to /dev/ path)
 
 ```bash
 # 1. Start from latest dev
-git checkout dev && git pull origin dev
+git checkout claude/dev && git pull origin claude/dev
 
 # 2. Create feature branch
 git checkout -b feature/issue-{number}-{description}
@@ -898,8 +898,8 @@ gh pr create --base dev
 
 ```bash
 # Only after dev is tested and stable:
-# 1. Create PR: dev → main
-gh pr create --base main --head dev --title "Release: <summary>"
+# 1. Create PR: claude/dev → main
+gh pr create --base main --head claude/dev --title "Release: <summary>"
 
 # 2. Merge after review
 # 3. GitHub Pages auto-deploys both branches
@@ -918,9 +918,9 @@ gh pr create --base main --head dev --title "Release: <summary>"
 
 | Branch | Direct Commits | PR Target | Status |
 |--------|----------------|-----------|--------|
-| `main` | **NEVER** | From `dev` only | Production |
-| `dev` | **NEVER** | From `feature/*` | Integration / Preview |
-| `feature/*` | YES | Into `dev` | Working branch |
+| `main` | **NEVER** | From `claude/dev` only | Production |
+| `claude/dev` | **NEVER** | From `claude/*` feature branches | Integration / Preview |
+| `claude/*` | YES | Into `claude/dev` | Working branch |
 
 ### 13.6 Commit Messages (Conventional Commits)
 
@@ -948,8 +948,8 @@ Deployments are fully automated via GitHub Actions (`.github/workflows/deploy.ym
 
 | Trigger | What happens |
 |---------|-------------|
-| Push to `main` | Rebuilds **both** main + dev and deploys combined site |
-| Push to `dev` | Rebuilds **both** main + dev and deploys combined site |
+| Push to `main` | Rebuilds **both** main + claude/dev and deploys combined site |
+| Push to `claude/dev` | Rebuilds **both** main + claude/dev and deploys combined site |
 | Manual dispatch | Same as above (trigger from Actions tab) |
 
 **Setup (one-time):** Go to repo **Settings > Pages > Source** and select **GitHub Actions**.
