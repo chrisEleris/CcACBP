@@ -158,6 +158,9 @@ describe("ECS helper functions", () => {
     it("returns DEPLOYMENT for other messages", () => {
       expect(resolveEventType("service updated successfully")).toBe("DEPLOYMENT");
     });
+    it("prioritizes ERROR over TASK when message contains both", () => {
+      expect(resolveEventType("task failed to start")).toBe("ERROR");
+    });
   });
 
   describe("resolveLaunchType", () => {

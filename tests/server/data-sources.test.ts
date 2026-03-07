@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "../../src/server/index";
+import { redactConfig } from "../../src/server/routes/data-sources";
 
 describe("Data Source API routes", () => {
   it("GET /api/data-sources returns empty array initially", async () => {
@@ -330,6 +331,69 @@ describe("Data Source API routes", () => {
     expect(config.host).toBe("redshift.example.com");
     expect(config.secret).toBe("***REDACTED***");
     expect(config.token).toBe("***REDACTED***");
+  });
+
+  describe("redactConfig unit tests", () => {
+    it("returns non-JSON strings unchanged", () => {
+      expect(redactConfig("not valid json")).toBe("not valid json");
+      expect(redactConfig("")).toBe("");
+    });
+
+    it("returns empty object unchanged", () => {
+      expect(redactConfig("{}")).toBe("{}");
+    });
+
+    it("preserves non-sensitive keys", () => {
+      const input = JSON.stringify({ host: "localhost", port: 3306 });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.host).toBe("localhost");
+      expect(result.port).toBe(3306);
+    });
+
+    it("redacts all known sensitive keys", () => {
+      const sensitiveKeys = [
+        "password",
+        "secret",
+        "token",
+        "apiKey",
+        "api_key",
+        "accessKey",
+        "access_key",
+        "secretKey",
+        "secret_key",
+        "credentials",
+      ];
+      const input: Record<string, string> = {};
+      for (const key of sensitiveKeys) {
+        input[key] = `value-for-${key}`;
+      }
+      const result = JSON.parse(redactConfig(JSON.stringify(input)));
+      for (const key of sensitiveKeys) {
+        expect(result[key]).toBe("***REDACTED***");
+      }
+    });
+
+    it("redacts nested sensitive keys at any depth", () => {
+      const input = JSON.stringify({
+        level1: { password: "secret1", level2: { token: "secret2" } },
+      });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.level1.password).toBe("***REDACTED***");
+      expect(result.level1.level2.token).toBe("***REDACTED***");
+    });
+
+    it("does not redact partial key matches like passwordHash", () => {
+      const input = JSON.stringify({ passwordHash: "abc123" });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.passwordHash).toBe("abc123");
+    });
+
+    it("preserves arrays without redaction", () => {
+      const input = JSON.stringify({ tags: ["a", "b"], password: "secret" });
+      const result = JSON.parse(redactConfig(input));
+      expect(result.tags).toEqual(["a", "b"]);
+      expect(result.password).toBe("***REDACTED***");
+    });
   });
 
   it("POST /api/data-sources redacts sensitive config fields in nested objects", async () => {

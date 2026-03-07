@@ -41,7 +41,7 @@ function redactObject(obj: Record<string, unknown>): Record<string, unknown> {
  * Redacts sensitive fields from a data source config JSON string.
  * Replaces values of known credential keys with "***REDACTED***" at any nesting depth.
  */
-function redactConfig(configStr: string): string {
+export function redactConfig(configStr: string): string {
   try {
     const parsed = JSON.parse(configStr) as Record<string, unknown>;
     return JSON.stringify(redactObject(parsed));

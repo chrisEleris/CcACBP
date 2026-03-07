@@ -620,6 +620,20 @@ describe("AI API routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("truncates prompt to 100 characters in mock response", async () => {
+      const longPrompt = "A".repeat(200);
+      const res = await app.request("/api/ai/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: longPrompt, pageContext: "test" }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as AnalyzeBody;
+      // The response includes only the first 100 chars of the prompt
+      expect(body.data.response).toContain("A".repeat(100));
+      expect(body.data.response).not.toContain("A".repeat(101));
+    });
+
     it("accepts all valid agentType enum values", async () => {
       const validTypes = [
         "log-analysis",
