@@ -14,7 +14,7 @@ const testSchema = z.object({
 export const connectorRoutes = new Hono()
   .get("/", (c) => {
     return c.json({
-      connectors: [
+      data: [
         { id: "aws-mcp", name: "AWS MCP Server", status: "disconnected" },
         { id: "slack", name: "Slack", status: "disconnected" },
         { id: "claude-ai", name: "Claude AI", status: "disconnected" },

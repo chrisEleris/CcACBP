@@ -57,6 +57,16 @@ export const scheduledReportRoutes = new Hono()
   .post("/", zValidator("json", createScheduleSchema), async (c) => {
     try {
       const data = c.req.valid("json");
+
+      // Verify the referenced report exists
+      const [report] = await db
+        .select()
+        .from(savedReports)
+        .where(eq(savedReports.id, data.reportId));
+      if (!report) {
+        return c.json({ message: "Referenced report not found" }, 404);
+      }
+
       const now = new Date().toISOString();
 
       const newSchedule: NewScheduledReport = {

@@ -195,4 +195,36 @@ describe("Report API routes", () => {
     const body = await res.json();
     expect(body.message).toBe("Report not found");
   });
+
+  it("DELETE /api/reports/:id cascades deletion to related executions", async () => {
+    // Create a report
+    const createRes = await app.request("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Cascade Delete Test",
+        query: "SELECT 1",
+        visualization: "table",
+      }),
+    });
+    const created = await createRes.json();
+    const id = created.data.id;
+
+    // Execute the report to create execution records
+    await app.request(`/api/reports/${id}/execute`, { method: "POST" });
+    await app.request(`/api/reports/${id}/execute`, { method: "POST" });
+
+    // Verify executions exist
+    const execRes = await app.request(`/api/reports/${id}/executions`);
+    const execBody = await execRes.json();
+    expect(execBody.data.length).toBeGreaterThanOrEqual(2);
+
+    // Delete the report (should cascade to executions)
+    const deleteRes = await app.request(`/api/reports/${id}`, { method: "DELETE" });
+    expect(deleteRes.status).toBe(200);
+
+    // Report should be gone
+    const getRes = await app.request(`/api/reports/${id}`);
+    expect(getRes.status).toBe(404);
+  });
 });

@@ -121,6 +121,8 @@ export const reportRoutes = new Hono()
       if (!existing) {
         return c.json({ message: "Report not found" }, 404);
       }
+      // Delete related executions first (no FK cascade in SQLite without pragma)
+      await db.delete(reportExecutions).where(eq(reportExecutions.reportId, id));
       await db.delete(savedReports).where(eq(savedReports.id, id));
       return c.json({ data: { message: "Report deleted" } });
     } catch (error) {

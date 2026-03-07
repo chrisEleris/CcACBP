@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index";
@@ -27,109 +27,31 @@ type SchemaTable = {
   columns: SchemaColumn[];
 };
 
-const mockSchema: SchemaTable[] = [
-  {
-    name: "data_sources",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "name", type: "TEXT" },
-      { name: "type", type: "TEXT" },
-      { name: "config", type: "TEXT" },
-      { name: "status", type: "TEXT" },
-      { name: "last_tested_at", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-      { name: "updated_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "saved_reports",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "name", type: "TEXT" },
-      { name: "description", type: "TEXT" },
-      { name: "query", type: "TEXT" },
-      { name: "data_source_id", type: "TEXT" },
-      { name: "visualization", type: "TEXT" },
-      { name: "chart_config", type: "TEXT" },
-      { name: "layout", type: "TEXT" },
-      { name: "parameters", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-      { name: "updated_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "report_executions",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "report_id", type: "TEXT" },
-      { name: "status", type: "TEXT" },
-      { name: "row_count", type: "INTEGER" },
-      { name: "duration_ms", type: "INTEGER" },
-      { name: "error", type: "TEXT" },
-      { name: "result_path", type: "TEXT" },
-      { name: "executed_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "ai_conversations",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "title", type: "TEXT" },
-      { name: "page_context", type: "TEXT" },
-      { name: "agent_type", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-      { name: "updated_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "ai_messages",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "conversation_id", type: "TEXT" },
-      { name: "role", type: "TEXT" },
-      { name: "content", type: "TEXT" },
-      { name: "metadata", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "report_templates",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "name", type: "TEXT" },
-      { name: "description", type: "TEXT" },
-      { name: "category", type: "TEXT" },
-      { name: "query", type: "TEXT" },
-      { name: "visualization", type: "TEXT" },
-      { name: "chart_config", type: "TEXT" },
-      { name: "parameters", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "dashboard_widgets",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "report_id", type: "TEXT" },
-      { name: "widget_type", type: "TEXT" },
-      { name: "title", type: "TEXT" },
-      { name: "position", type: "TEXT" },
-      { name: "config", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-    ],
-  },
-  {
-    name: "query_snippets",
-    columns: [
-      { name: "id", type: "TEXT" },
-      { name: "name", type: "TEXT" },
-      { name: "description", type: "TEXT" },
-      { name: "sql", type: "TEXT" },
-      { name: "data_source_id", type: "TEXT" },
-      { name: "created_at", type: "TEXT" },
-    ],
-  },
-];
+/**
+ * Queries the actual SQLite database schema instead of returning hardcoded data.
+ * Reads sqlite_master for table names and PRAGMA table_info for column details.
+ */
+async function getDbSchema(): Promise<SchemaTable[]> {
+  const tablesResult = await db.all<{ name: string }>(
+    sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_litestream%' ORDER BY name`,
+  );
+
+  const tables: SchemaTable[] = [];
+  for (const table of tablesResult) {
+    const columnsResult = await db.all<{ name: string; type: string }>(
+      sql`SELECT name, type FROM pragma_table_info(${table.name})`,
+    );
+    tables.push({
+      name: table.name,
+      columns: columnsResult.map((col) => ({
+        name: col.name,
+        type: col.type || "TEXT",
+      })),
+    });
+  }
+
+  return tables;
+}
 
 export const queryRoutes = new Hono()
   .post("/execute", zValidator("json", executeQuerySchema), async (c) => {
@@ -202,6 +124,12 @@ export const queryRoutes = new Hono()
     }
   })
 
-  .get("/schema", (c) => {
-    return c.json({ data: mockSchema });
+  .get("/schema", async (c) => {
+    try {
+      const schema = await getDbSchema();
+      return c.json({ data: schema });
+    } catch (error) {
+      console.error("Error fetching database schema:", error);
+      return c.json({ message: "Failed to fetch schema" }, 500);
+    }
   });

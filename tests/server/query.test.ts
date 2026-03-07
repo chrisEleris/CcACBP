@@ -27,14 +27,33 @@ describe("Query API routes", () => {
     expect(res.status).toBe(400);
   });
 
-  it("GET /api/query/schema returns table schema info", async () => {
+  it("GET /api/query/schema returns table schema info from actual database", async () => {
     const res = await app.request("/api/query/schema");
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.length).toBeGreaterThan(0);
-    expect(body.data[0].name).toBeDefined();
-    expect(body.data[0].columns).toBeDefined();
+
+    // Verify structure of each table
+    for (const table of body.data) {
+      expect(typeof table.name).toBe("string");
+      expect(Array.isArray(table.columns)).toBe(true);
+      expect(table.columns.length).toBeGreaterThan(0);
+      for (const col of table.columns) {
+        expect(typeof col.name).toBe("string");
+        expect(typeof col.type).toBe("string");
+      }
+    }
+
+    // Verify known tables exist (from the actual schema)
+    const tableNames = body.data.map((t: { name: string }) => t.name);
+    expect(tableNames).toContain("data_sources");
+    expect(tableNames).toContain("saved_reports");
+    expect(tableNames).toContain("report_executions");
+    expect(tableNames).toContain("ai_conversations");
+    expect(tableNames).toContain("ai_messages");
+    expect(tableNames).toContain("query_snippets");
+    expect(tableNames).toContain("scheduled_reports");
   });
 
   it("GET /api/query/snippets returns array", async () => {

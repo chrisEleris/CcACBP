@@ -6,11 +6,11 @@ describe("Connector API routes", () => {
     const res = await app.request("/api/connectors");
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body.connectors).toHaveLength(4);
-    expect(body.connectors[0].id).toBe("aws-mcp");
-    expect(body.connectors[1].id).toBe("slack");
-    expect(body.connectors[2].id).toBe("claude-ai");
-    expect(body.connectors[3].id).toBe("chatgpt");
+    expect(body.data).toHaveLength(4);
+    expect(body.data[0].id).toBe("aws-mcp");
+    expect(body.data[1].id).toBe("slack");
+    expect(body.data[2].id).toBe("claude-ai");
+    expect(body.data[3].id).toBe("chatgpt");
   });
 
   it("POST /api/connectors/connect saves config", async () => {

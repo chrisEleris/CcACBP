@@ -1,7 +1,21 @@
+import { timingSafeEqual } from "node:crypto";
 import type { Context, Next } from "hono";
 import { config } from "../config";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
+
+/**
+ * Compares two strings in constant time to prevent timing attacks.
+ */
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Compare against self to burn roughly the same time, but always return false
+    const buf = Buffer.from(a);
+    timingSafeEqual(buf, buf);
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 /**
  * API key authentication middleware for mutating HTTP methods.
@@ -34,7 +48,7 @@ export async function apiKeyAuth(c: Context, next: Next): Promise<void> {
 
   const providedKey = xApiKey ?? bearerKey;
 
-  if (!providedKey || providedKey !== apiKey) {
+  if (!providedKey || !safeCompare(providedKey, apiKey)) {
     c.res = c.json({ message: "Unauthorized" }, 401);
     return;
   }

@@ -363,6 +363,20 @@ describe("Scheduled Reports API routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("returns 404 when reportId references a non-existent report", async () => {
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId: "nonexistent-report-id-that-does-not-exist",
+          cronExpression: "0 9 * * *",
+        }),
+      });
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as ErrorBody;
+      expect(body.message).toContain("report not found");
+    });
+
     it("returns 400 when reportId is an empty string", async () => {
       const res = await app.request("/api/scheduled-reports", {
         method: "POST",
