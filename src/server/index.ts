@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { config } from "./config";
 import { apiKeyAuth } from "./middleware/auth";
+import { rateLimit } from "./middleware/rate-limit";
 import { aiRoutes } from "./routes/ai";
 import { awsRoutes } from "./routes/aws";
 import { connectorRoutes } from "./routes/connectors";
@@ -39,6 +40,19 @@ app.use(
   }),
 );
 app.use("/api/*", apiKeyAuth);
+
+// Global rate limit: 200 requests per minute per IP.
+// In test mode the limits are raised to avoid interfering with the test suite.
+const isTest = config.NODE_ENV === "test";
+app.use("/api/*", rateLimit(isTest ? 10_000 : 200, 60_000));
+
+// Stricter limits for expensive / destructive endpoints (skipped in test mode).
+if (!isTest) {
+  // AI analyze can invoke external LLM APIs with cost implications.
+  app.use("/api/ai/analyze", rateLimit(10, 60_000));
+  // ECS mutation endpoints issue live AWS infrastructure changes.
+  app.use("/api/ecs/*", rateLimit(30, 60_000));
+}
 
 app.route("/api", healthRoute);
 app.route("/api/ai", aiRoutes);

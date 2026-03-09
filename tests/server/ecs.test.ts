@@ -96,3 +96,63 @@ describe("ECS API routes", () => {
     expect(body.data.taskId).toBe("my-task-id");
   });
 });
+
+describe("ECS GET endpoints — param validation (PG-055)", () => {
+  const INVALID_PARAM = encodeURIComponent("<script>alert(1)</script>");
+
+  it("GET /api/ecs/clusters/:name returns 400 for invalid cluster name", async () => {
+    const res = await app.request(`/api/ecs/clusters/${INVALID_PARAM}`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  it("GET /api/ecs/services/:cluster returns 400 for invalid cluster name", async () => {
+    const res = await app.request(`/api/ecs/services/${INVALID_PARAM}`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  it("GET /api/ecs/tasks/:cluster/:service returns 400 for invalid cluster name", async () => {
+    const res = await app.request(`/api/ecs/tasks/${INVALID_PARAM}/valid-service`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  it("GET /api/ecs/tasks/:cluster/:service returns 400 for invalid service name", async () => {
+    const res = await app.request(`/api/ecs/tasks/valid-cluster/${INVALID_PARAM}`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  it("GET /api/ecs/events/:cluster returns 400 for invalid cluster name", async () => {
+    const res = await app.request(`/api/ecs/events/${INVALID_PARAM}`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  it("GET /api/ecs/clusters/:name allows valid cluster name", async () => {
+    const res = await app.request("/api/ecs/clusters/my-valid-cluster");
+    // Returns 200/404 on success or 500 on AWS error — all are acceptable for a valid param
+    expect([200, 404, 500]).toContain(res.status);
+  });
+
+  it("GET /api/ecs/services/:cluster allows valid cluster name", async () => {
+    const res = await app.request("/api/ecs/services/my-valid-cluster");
+    expect([200, 500]).toContain(res.status);
+  });
+
+  it("GET /api/ecs/tasks/:cluster/:service allows valid params", async () => {
+    const res = await app.request("/api/ecs/tasks/my-valid-cluster/my-valid-service");
+    expect([200, 500]).toContain(res.status);
+  });
+
+  it("GET /api/ecs/events/:cluster allows valid cluster name", async () => {
+    const res = await app.request("/api/ecs/events/my-valid-cluster");
+    expect([200, 500]).toContain(res.status);
+  });
+});

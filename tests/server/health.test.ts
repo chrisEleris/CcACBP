@@ -21,23 +21,39 @@ describe("Health endpoint", () => {
 });
 
 describe("Health DB endpoint", () => {
-  it("GET /api/health/db returns ok status with tables list", async () => {
+  it("GET /api/health/db returns ok status with table count (no table names)", async () => {
     const res = await app.request("/api/health/db");
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
-    expect(Array.isArray(body.tables)).toBe(true);
-    expect(body.tables.length).toBeGreaterThan(0);
+    expect(typeof body.tableCount).toBe("number");
+    expect(body.tableCount).toBeGreaterThan(0);
+    // Table names should NOT be exposed — only the count
+    expect(body.tables).toBeUndefined();
   });
+});
 
-  it("GET /api/health/db includes known application tables", async () => {
-    const res = await app.request("/api/health/db");
+describe("Health AWS endpoint", () => {
+  it("GET /api/health/aws returns a structured response with status field", async () => {
+    const res = await app.request("/api/health/aws");
     const body = await res.json();
 
-    expect(body.tables).toContain("data_sources");
-    expect(body.tables).toContain("saved_reports");
-    expect(body.tables).toContain("ai_conversations");
-    expect(body.tables).toContain("scheduled_reports");
+    // In test environment without real AWS credentials the endpoint returns 503,
+    // but it must always return a structured JSON body with a status field.
+    expect([200, 503]).toContain(res.status);
+    expect(typeof body.status).toBe("string");
+    expect(body.message !== undefined || body.regionCount !== undefined).toBe(true);
+  });
+
+  it("GET /api/health/aws returns 503 with meaningful message when credentials are absent", async () => {
+    const res = await app.request("/api/health/aws");
+    // Without real AWS credentials this will always be 503 in CI.
+    if (res.status === 503) {
+      const body = await res.json();
+      expect(body.status).toBe("error");
+      expect(typeof body.message).toBe("string");
+      expect(body.message.length).toBeGreaterThan(0);
+    }
   });
 });

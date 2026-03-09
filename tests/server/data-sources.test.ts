@@ -334,9 +334,9 @@ describe("Data Source API routes", () => {
   });
 
   describe("redactConfig unit tests", () => {
-    it("returns non-JSON strings unchanged", () => {
-      expect(redactConfig("not valid json")).toBe("not valid json");
-      expect(redactConfig("")).toBe("");
+    it("returns safe placeholder for non-JSON strings to prevent credential leakage", () => {
+      expect(redactConfig("not valid json")).toBe('"[config unavailable]"');
+      expect(redactConfig("")).toBe('"[config unavailable]"');
     });
 
     it("returns empty object unchanged", () => {

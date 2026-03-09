@@ -13,7 +13,10 @@ export default defineConfig({
   test: {
     env: {
       DATABASE_URL: "file::memory:?cache=shared",
+      SECRET_KEY: "test-secret-key-for-vitest-32bytes",
+      NODE_ENV: "test",
     },
+    setupFiles: ["./vitest.setup.ts"],
     globals: false,
     environment: "node",
     include: ["tests/**/*.test.ts"],

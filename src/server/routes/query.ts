@@ -9,6 +9,56 @@ import { parsePagination } from "../lib/pagination";
 const MAX_SQL = 50_000;
 const MAX_NAME = 500;
 
+// Defense-in-depth: block write statements at the application layer even if
+// the underlying connection were somehow not read-only.
+
+/**
+ * Pattern that matches a single SQL statement starting with a write keyword
+ * (after stripping leading whitespace and line/block comments).
+ */
+const WRITE_STATEMENT_PATTERN =
+  /^\s*(?:--[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*(?:INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|ATTACH|DETACH|REPLACE|PRAGMA)\b/i;
+
+/**
+ * Pattern that detects a CTE (WITH clause) followed by a write operation.
+ * Covers: WITH ... INSERT, WITH ... UPDATE, WITH ... DELETE
+ */
+const CTE_WRITE_PATTERN = /\b(?:INSERT|UPDATE|DELETE)\b/i;
+
+/**
+ * Returns true when the SQL input contains any write statement keyword.
+ *
+ * Handles the following bypass vectors:
+ * - Multi-statement queries (split on `;`, each statement checked individually)
+ * - REPLACE INTO (added to the block-list)
+ * - PRAGMA write operations (added to the block-list)
+ * - CTEs: WITH ... (INSERT|UPDATE|DELETE) patterns are detected by scanning
+ *   the full statement for write keywords after a WITH clause
+ */
+export function isWriteStatement(sqlStr: string): boolean {
+  const statements = sqlStr
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  for (const stmt of statements) {
+    // Check if this statement starts with a write keyword.
+    if (WRITE_STATEMENT_PATTERN.test(stmt)) {
+      return true;
+    }
+
+    // Check for CTE-wrapped write statements: WITH ... (INSERT|UPDATE|DELETE)
+    if (
+      /^\s*(?:--[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*WITH\b/i.test(stmt) &&
+      CTE_WRITE_PATTERN.test(stmt)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 const executeQuerySchema = z.object({
   sql: z.string().min(1).max(MAX_SQL),
   dataSourceId: z.string().max(200).optional(),
@@ -32,7 +82,17 @@ type SchemaTable = {
 };
 
 /**
- * Queries the actual SQLite database schema instead of returning hardcoded data.
+ * Tables exposed via GET /api/query/schema.
+ *
+ * Only user-facing tables are included. Internal operational tables
+ * (ai_conversations, ai_messages, report_executions, dashboard_widgets,
+ * report_templates, scheduled_reports) are intentionally excluded to
+ * limit schema information disclosure to API callers.
+ */
+const SCHEMA_ALLOWED_TABLES = new Set(["data_sources", "saved_reports", "query_snippets"]);
+
+/**
+ * Queries the actual SQLite database schema and returns only the allowed tables.
  * Reads sqlite_master for table names and PRAGMA table_info for column details.
  */
 async function getDbSchema(): Promise<SchemaTable[]> {
@@ -42,6 +102,9 @@ async function getDbSchema(): Promise<SchemaTable[]> {
 
   const tables: SchemaTable[] = [];
   for (const table of tablesResult) {
+    // Only expose tables in the allow-list to avoid leaking internal application schema.
+    if (!SCHEMA_ALLOWED_TABLES.has(table.name)) continue;
+
     const columnsResult = await db.all<{ name: string; type: string }>(
       sql`SELECT name, type FROM pragma_table_info(${table.name})`,
     );
@@ -60,7 +123,19 @@ async function getDbSchema(): Promise<SchemaTable[]> {
 export const queryRoutes = new Hono()
   .post("/execute", zValidator("json", executeQuerySchema), async (c) => {
     try {
-      c.req.valid("json");
+      const { sql: sqlStr } = c.req.valid("json");
+
+      // Defense-in-depth: reject write statements before execution even if the
+      // underlying connection is already restricted to read-only mode.
+      if (isWriteStatement(sqlStr)) {
+        return c.json(
+          {
+            message:
+              "Write statements (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, TRUNCATE, ATTACH, DETACH, REPLACE, PRAGMA) are not permitted. Only SELECT queries are allowed.",
+          },
+          400,
+        );
+      }
 
       // Stub: returns mock data. When implementing real execution:
       // - Enforce read-only connections (no INSERT/UPDATE/DELETE/DROP/ALTER)

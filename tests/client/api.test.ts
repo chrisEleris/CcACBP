@@ -69,6 +69,19 @@ describe("fetchApi", () => {
 
     await expect(fetchApi("/api/test")).rejects.toThrow("API error: 500 Internal Server Error");
   });
+
+  it("throws when response body is missing the data field", async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ message: "Not found" }),
+    };
+    vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
+
+    await expect(fetchApi("/api/missing-data")).rejects.toThrow(
+      "Unexpected response shape from /api/missing-data",
+    );
+  });
 });
 
 describe("mutateApi", () => {

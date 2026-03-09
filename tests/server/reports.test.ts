@@ -83,6 +83,7 @@ describe("Report API routes", () => {
     expect(body.data.status).toBe("mock");
     expect(body.data.reportId).toBe(id);
     expect(body.data.rowCount).toBeGreaterThanOrEqual(0);
+    expect(body.mock).toBe(true);
   });
 
   it("GET /api/reports/:id/executions returns execution history", async () => {

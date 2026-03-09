@@ -126,13 +126,13 @@ describe("Database connection", () => {
 });
 
 describe("Health DB endpoint", () => {
-  it("should return ok status and tables list", async () => {
+  it("should return ok status with table count (no table names leaked)", async () => {
     const app = (await import("../../src/server/index")).default;
     const res = await app.request("/api/health/db");
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { status: string; tables: string[] };
+    const body = (await res.json()) as { status: string; tableCount: number };
     expect(body.status).toBe("ok");
-    expect(Array.isArray(body.tables)).toBe(true);
-    expect(body.tables.length).toBeGreaterThan(0);
+    expect(typeof body.tableCount).toBe("number");
+    expect(body.tableCount).toBeGreaterThan(0);
   });
 });

@@ -2,9 +2,38 @@ import { zValidator } from "@hono/zod-validator";
 import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { config } from "../config";
 import { db } from "../db/index";
 import { dataSources } from "../db/schema";
+import { decrypt, encrypt } from "../lib/crypto";
 import { parsePagination } from "../lib/pagination";
+
+// Prefix used to distinguish AES-256-GCM encrypted blobs from plaintext.
+const ENCRYPTED_PREFIX = "enc:v1:";
+
+/**
+ * Encrypts a config JSON string using AES-256-GCM when SECRET_KEY is configured.
+ * When SECRET_KEY is not set (development/test without override), the value is stored as plaintext.
+ */
+function encryptConfig(configStr: string): string {
+  if (!config.SECRET_KEY) return configStr;
+  return ENCRYPTED_PREFIX + encrypt(configStr, config.SECRET_KEY);
+}
+
+/**
+ * Decrypts a config value previously encrypted by {@link encryptConfig}.
+ * Falls back to returning the raw value unchanged if it is not prefixed
+ * (e.g. rows migrated before encryption was introduced, or dev mode).
+ */
+function decryptConfig(storedValue: string): string {
+  if (!storedValue.startsWith(ENCRYPTED_PREFIX)) return storedValue;
+  if (!config.SECRET_KEY) {
+    // Should not happen in production (entry.ts enforces SECRET_KEY), but
+    // guard defensively so we do not expose a raw encrypted blob to callers.
+    throw new Error("SECRET_KEY is required to decrypt stored credentials");
+  }
+  return decrypt(storedValue.slice(ENCRYPTED_PREFIX.length), config.SECRET_KEY);
+}
 
 const SENSITIVE_CONFIG_KEYS = new Set([
   "password",
@@ -23,15 +52,23 @@ const SENSITIVE_CONFIG_KEYS = new Set([
  * Recursively redacts sensitive fields from an object.
  * Replaces values of known credential keys with "***REDACTED***" at any depth.
  */
+function redactValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactValue);
+  }
+  if (typeof value === "object" && value !== null) {
+    return redactObject(value as Record<string, unknown>);
+  }
+  return value;
+}
+
 function redactObject(obj: Record<string, unknown>): Record<string, unknown> {
   const redacted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (SENSITIVE_CONFIG_KEYS.has(key)) {
       redacted[key] = "***REDACTED***";
-    } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      redacted[key] = redactObject(value as Record<string, unknown>);
     } else {
-      redacted[key] = value;
+      redacted[key] = redactValue(value);
     }
   }
   return redacted;
@@ -46,14 +83,18 @@ export function redactConfig(configStr: string): string {
     const parsed = JSON.parse(configStr) as Record<string, unknown>;
     return JSON.stringify(redactObject(parsed));
   } catch {
-    return configStr;
+    // Return a safe placeholder instead of the raw string to prevent credential leakage
+    // when the config is not valid JSON (e.g., connection strings, corrupted data).
+    return '"[config unavailable]"';
   }
 }
 
 type DataSourceRow = typeof dataSources.$inferSelect;
 
 function redactDataSource(row: DataSourceRow): DataSourceRow {
-  return { ...row, config: redactConfig(row.config) };
+  // Decrypt first, then redact sensitive fields before returning to the caller.
+  const decrypted = decryptConfig(row.config);
+  return { ...row, config: redactConfig(decrypted) };
 }
 
 const MAX_NAME = 500;
@@ -137,7 +178,7 @@ export const dataSourceRoutes = new Hono()
           id: crypto.randomUUID(),
           name: data.name,
           type: data.type,
-          config: data.config,
+          config: encryptConfig(data.config),
           status: data.status ?? "disconnected",
           createdAt: now,
           updatedAt: now,
@@ -160,9 +201,14 @@ export const dataSourceRoutes = new Hono()
         return c.json({ message: "Data source not found" }, 404);
       }
 
+      const updatePayload = {
+        ...data,
+        ...(data.config !== undefined ? { config: encryptConfig(data.config) } : {}),
+        updatedAt: new Date().toISOString(),
+      };
       const [updated] = await db
         .update(dataSources)
-        .set({ ...data, updatedAt: new Date().toISOString() })
+        .set(updatePayload)
         .where(eq(dataSources.id, id))
         .returning();
       return c.json({ data: redactDataSource(updated) });

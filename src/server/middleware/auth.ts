@@ -1,18 +1,23 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Context, Next } from "hono";
 import { config } from "../config";
 
+// Fixed HMAC salt — its value is not secret; it only ensures both inputs
+// are hashed to the same fixed length before the constant-time comparison,
+// eliminating the length-based timing side channel.
+const HMAC_SALT = Buffer.alloc(32);
+
 /**
  * Compares two strings in constant time to prevent timing attacks.
+ *
+ * Both inputs are HMAC-SHA256 digested to a fixed 32-byte length before the
+ * comparison, so the execution time does not leak information about key length
+ * or the position of the first differing byte.
  */
 function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Compare against self to burn roughly the same time, but always return false
-    const buf = Buffer.from(a);
-    timingSafeEqual(buf, buf);
-    return false;
-  }
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  const ha = createHmac("sha256", HMAC_SALT).update(a).digest();
+  const hb = createHmac("sha256", HMAC_SALT).update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 /**

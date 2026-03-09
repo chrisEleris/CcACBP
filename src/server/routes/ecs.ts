@@ -23,7 +23,44 @@ import type {
   ECSTask,
   ECSTaskStatus,
 } from "../../shared/types";
+import { config } from "../config";
 import { ecsClient } from "../services/aws-clients";
+
+// Safe character set for ECS resource identifiers (cluster names, service names, task IDs, ARNs).
+const ECS_PARAM_REGEX = /^[a-zA-Z0-9\-_/.:\s]*$/;
+const MAX_PARAM_LENGTH = 255;
+
+/** Zod schema for a single ECS path parameter (cluster, service, or task identifier). */
+const ecsParamSchema = z
+  .string()
+  .min(1)
+  .max(MAX_PARAM_LENGTH)
+  .regex(ECS_PARAM_REGEX, "Invalid characters in resource identifier");
+
+/**
+ * Returns the set of allowed cluster names/ARNs derived from the ALLOWED_ECS_CLUSTERS env var,
+ * or null when the env var is unset (meaning all clusters are permitted).
+ */
+function getAllowedClusters(): Set<string> | null {
+  if (!config.ALLOWED_ECS_CLUSTERS) return null;
+  const names = config.ALLOWED_ECS_CLUSTERS.split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return names.length > 0 ? new Set(names) : null;
+}
+
+/**
+ * Validates a cluster identifier against the ALLOWED_ECS_CLUSTERS allow-list.
+ * Returns an error response string when the cluster is not permitted, or null when it is.
+ */
+function checkClusterAllowed(cluster: string): string | null {
+  const allowed = getAllowedClusters();
+  if (allowed === null) return null;
+  if (!allowed.has(cluster)) {
+    return `Cluster '${cluster}' is not in the list of allowed clusters`;
+  }
+  return null;
+}
 
 const scaleServiceSchema = z.object({
   desiredCount: z.number().int().min(0).max(100),
@@ -138,7 +175,15 @@ export const ecsRoutes = new Hono()
     }
   })
   .get("/clusters/:name", async (c) => {
-    const name = c.req.param("name");
+    const nameParsed = ecsParamSchema.safeParse(c.req.param("name"));
+    if (!nameParsed.success) {
+      return c.json({ data: null, error: "Invalid cluster identifier" }, 400);
+    }
+    const name = nameParsed.data;
+    const clusterError = checkClusterAllowed(name);
+    if (clusterError) {
+      return c.json({ data: null, error: clusterError }, 403);
+    }
     try {
       const descResponse = await ecsClient.send(new DescribeClustersCommand({ clusters: [name] }));
 
@@ -170,7 +215,15 @@ export const ecsRoutes = new Hono()
     }
   })
   .get("/services/:cluster", async (c) => {
-    const cluster = c.req.param("cluster");
+    const clusterParsed = ecsParamSchema.safeParse(c.req.param("cluster"));
+    if (!clusterParsed.success) {
+      return c.json({ data: [], error: "Invalid cluster identifier" }, 400);
+    }
+    const cluster = clusterParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ data: [], error: clusterError }, 403);
+    }
     try {
       const listResponse = await ecsClient.send(new ListServicesCommand({ cluster }));
       const serviceArns = listResponse.serviceArns ?? [];
@@ -245,8 +298,17 @@ export const ecsRoutes = new Hono()
     }
   })
   .get("/tasks/:cluster/:service", async (c) => {
-    const cluster = c.req.param("cluster");
-    const service = c.req.param("service");
+    const clusterParsed = ecsParamSchema.safeParse(c.req.param("cluster"));
+    const serviceParsed = ecsParamSchema.safeParse(c.req.param("service"));
+    if (!clusterParsed.success || !serviceParsed.success) {
+      return c.json({ data: [], error: "Invalid cluster or service identifier" }, 400);
+    }
+    const cluster = clusterParsed.data;
+    const service = serviceParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ data: [], error: clusterError }, 403);
+    }
     try {
       const listResponse = await ecsClient.send(
         new ListTasksCommand({ cluster, serviceName: service }),
@@ -309,8 +371,22 @@ export const ecsRoutes = new Hono()
     }
   })
   .post("/services/:cluster/:service/scale", zValidator("json", scaleServiceSchema), async (c) => {
-    const cluster = c.req.param("cluster");
-    const service = c.req.param("service");
+    const clusterRaw = c.req.param("cluster");
+    const serviceRaw = c.req.param("service");
+
+    const clusterParsed = ecsParamSchema.safeParse(clusterRaw);
+    const serviceParsed = ecsParamSchema.safeParse(serviceRaw);
+    if (!clusterParsed.success || !serviceParsed.success) {
+      return c.json({ message: "Invalid cluster or service identifier" }, 400);
+    }
+
+    const cluster = clusterParsed.data;
+    const service = serviceParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ message: clusterError }, 403);
+    }
+
     const { desiredCount } = c.req.valid("json");
     try {
       await ecsClient.send(new UpdateServiceCommand({ cluster, service, desiredCount }));
@@ -327,8 +403,22 @@ export const ecsRoutes = new Hono()
     }
   })
   .post("/services/:cluster/:service/deploy", async (c) => {
-    const cluster = c.req.param("cluster");
-    const service = c.req.param("service");
+    const clusterRaw = c.req.param("cluster");
+    const serviceRaw = c.req.param("service");
+
+    const clusterParsed = ecsParamSchema.safeParse(clusterRaw);
+    const serviceParsed = ecsParamSchema.safeParse(serviceRaw);
+    if (!clusterParsed.success || !serviceParsed.success) {
+      return c.json({ message: "Invalid cluster or service identifier" }, 400);
+    }
+
+    const cluster = clusterParsed.data;
+    const service = serviceParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ message: clusterError }, 403);
+    }
+
     try {
       await ecsClient.send(
         new UpdateServiceCommand({ cluster, service, forceNewDeployment: true }),
@@ -349,8 +439,22 @@ export const ecsRoutes = new Hono()
     }
   })
   .post("/tasks/:cluster/:taskId/stop", async (c) => {
-    const cluster = c.req.param("cluster");
-    const taskId = c.req.param("taskId");
+    const clusterRaw = c.req.param("cluster");
+    const taskIdRaw = c.req.param("taskId");
+
+    const clusterParsed = ecsParamSchema.safeParse(clusterRaw);
+    const taskIdParsed = ecsParamSchema.safeParse(taskIdRaw);
+    if (!clusterParsed.success || !taskIdParsed.success) {
+      return c.json({ message: "Invalid cluster or task identifier" }, 400);
+    }
+
+    const cluster = clusterParsed.data;
+    const taskId = taskIdParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ message: clusterError }, 403);
+    }
+
     try {
       await ecsClient.send(
         new StopTaskCommand({ cluster, task: taskId, reason: "Stopped by user via dashboard" }),
@@ -364,7 +468,15 @@ export const ecsRoutes = new Hono()
     }
   })
   .get("/events/:cluster", async (c) => {
-    const cluster = c.req.param("cluster");
+    const clusterParsed = ecsParamSchema.safeParse(c.req.param("cluster"));
+    if (!clusterParsed.success) {
+      return c.json({ data: [], error: "Invalid cluster identifier" }, 400);
+    }
+    const cluster = clusterParsed.data;
+    const clusterError = checkClusterAllowed(cluster);
+    if (clusterError) {
+      return c.json({ data: [], error: clusterError }, 403);
+    }
     try {
       const listResponse = await ecsClient.send(new ListServicesCommand({ cluster }));
       const serviceArns = listResponse.serviceArns ?? [];

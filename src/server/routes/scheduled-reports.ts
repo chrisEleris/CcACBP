@@ -8,11 +8,48 @@ import { type NewScheduledReport, scheduledReports } from "../db/schema-schedule
 import { parsePagination } from "../lib/pagination";
 
 /**
- * Basic cron expression validation.
- * Accepts standard 5-field cron expressions (minute hour day month weekday).
- * Each field allows: numbers, ranges (1-5), lists (1,3,5), steps (asterisk/5), and wildcards.
+ * Cron expression validation.
+ *
+ * Accepts standard 5-field expressions (minute hour day-of-month month weekday).
+ * Each field must be structurally valid AND have numeric values within the legal
+ * range for its position, preventing values like "99 99 99 99 99" from being stored.
+ *
+ * Supported syntax per field:
+ *   *             wildcard
+ *   N             single value
+ *   N-M           range
+ *   N,M,...       list (each element may itself be a range)
+ *   * /N or N/N   step
  */
 const CRON_FIELD = /^(\*|[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*)(\/[0-9]+)?$/;
+
+/**
+ * Per-field [min, max] ranges for the 5 standard cron fields:
+ * index 0 = minute, 1 = hour, 2 = day-of-month, 3 = month, 4 = weekday.
+ */
+const CRON_FIELD_RANGES: [number, number][] = [
+  [0, 59], // minute
+  [0, 23], // hour
+  [1, 31], // day-of-month
+  [1, 12], // month
+  [0, 7], // weekday (0 and 7 both represent Sunday)
+];
+
+/**
+ * Extracts every numeric literal from a single cron field token and checks
+ * that all of them fall within [min, max].
+ */
+function isCronFieldInRange(field: string, min: number, max: number): boolean {
+  if (field === "*") return true;
+  // Strip step suffix (e.g. "*/5" → "*", "1-5/2" → "1-5")
+  const base = field.split("/")[0];
+  const numbers = base.split(/[-,]/).filter((s) => s !== "*" && s !== "");
+  return numbers.every((n) => {
+    const v = Number(n);
+    return Number.isInteger(v) && v >= min && v <= max;
+  });
+}
+
 const cronExpression = z
   .string()
   .min(1)
@@ -20,9 +57,16 @@ const cronExpression = z
     (val) => {
       const parts = val.trim().split(/\s+/);
       if (parts.length < 5 || parts.length > 6) return false;
-      return parts.every((part) => CRON_FIELD.test(part));
+      // Validate structural format for each field.
+      if (!parts.every((part) => CRON_FIELD.test(part))) return false;
+      // Validate numeric ranges for the first 5 standard fields.
+      for (let i = 0; i < 5; i++) {
+        const [min, max] = CRON_FIELD_RANGES[i];
+        if (!isCronFieldInRange(parts[i], min, max)) return false;
+      }
+      return true;
     },
-    { message: "Invalid cron expression. Expected 5 or 6 space-separated fields." },
+    { message: "Invalid cron expression. Expected 5 space-separated fields with values in range." },
   );
 
 const createScheduleSchema = z.object({

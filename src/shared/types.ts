@@ -433,7 +433,7 @@ export type DeployRollback = {
 export type DataSourceType = "cloudwatch" | "redshift" | "mysql" | "s3" | "csv";
 export type DataSourceStatus = "connected" | "disconnected" | "error";
 export type VisualizationType = "table" | "bar" | "line" | "pie" | "area" | "scatter";
-export type ReportExecutionStatus = "running" | "completed" | "failed";
+export type ReportExecutionStatus = "running" | "completed" | "failed" | "mock";
 export type AiAgentType =
   | "log-analysis"
   | "cost-optimization"

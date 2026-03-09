@@ -168,9 +168,10 @@ export const reportRoutes = new Hono()
         return c.json({ message: "Report not found" }, 404);
       }
 
-      // Stub: returns simulated execution results until real query engine is wired up.
-      const rowCount = Math.floor(Math.random() * 1000) + 1;
-      const durationMs = Math.floor(Math.random() * 2000) + 50;
+      // Stub: returns deterministic placeholder results until real query engine is wired up.
+      // Deterministic values avoid polluting execution history with random noise.
+      const rowCount = 0;
+      const durationMs = 0;
       const now = new Date().toISOString();
 
       const [execution] = await db
@@ -187,7 +188,8 @@ export const reportRoutes = new Hono()
         })
         .returning();
 
-      return c.json({ data: execution });
+      // Include top-level mock flag so callers do not need to inspect status.
+      return c.json({ data: execution, mock: true });
     } catch (error) {
       console.error("Error executing report:", error);
       return c.json({ message: "Failed to execute report" }, 500);

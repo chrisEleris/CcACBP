@@ -421,6 +421,49 @@ describe("Scheduled Reports API routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("returns 400 when cronExpression has out-of-range minute (99)", async () => {
+      const reportId = await createReport("Bad Minute Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, cronExpression: "99 99 99 99 99" }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression has out-of-range hour (25)", async () => {
+      const reportId = await createReport("Bad Hour Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, cronExpression: "0 25 * * *" }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 when cronExpression has out-of-range month (13)", async () => {
+      const reportId = await createReport("Bad Month Report");
+      const res = await app.request("/api/scheduled-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, cronExpression: "0 9 1 13 *" }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("accepts valid cron expressions with ranges and steps", async () => {
+      const reportId = await createReport("Valid Cron Report");
+      const validExpressions = ["*/15 * * * *", "0 9 * * 1-5", "30 6 1 */3 *"];
+      for (const cronExpression of validExpressions) {
+        const res = await app.request("/api/scheduled-reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reportId, cronExpression }),
+        });
+        expect(res.status).toBe(201);
+      }
+    });
+
     it("returns a new unique id for each created schedule", async () => {
       const reportId = await createReport("Unique ID Report");
       const first = await createSchedule(reportId, "0 1 * * *");
