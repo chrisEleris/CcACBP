@@ -12,11 +12,26 @@ const KEY_LENGTH = 32; // AES-256 requires a 32-byte key
 const KDF_SALT = Buffer.from("ccacbp-datasource-key-v1");
 
 /**
+ * Cache for derived keys so that scryptSync (a ~46 ms blocking call) is only
+ * paid once per unique secret for the lifetime of the process.  In practice
+ * SECRET_KEY is a single per-process value, so this map holds at most one
+ * entry.
+ */
+const derivedKeyCache = new Map<string, Buffer>();
+
+/**
  * Derives a 32-byte AES key from the provided secret using scrypt.
  * scrypt is a memory-hard KDF that prevents brute-force attacks on weak keys.
+ *
+ * The result is memoized: subsequent calls with the same secret return the
+ * cached key without re-running the expensive KDF.
  */
 function keyBuffer(secret: string): Buffer {
-  return scryptSync(secret, KDF_SALT, KEY_LENGTH);
+  const cached = derivedKeyCache.get(secret);
+  if (cached) return cached;
+  const key = scryptSync(secret, KDF_SALT, KEY_LENGTH);
+  derivedKeyCache.set(secret, key);
+  return key;
 }
 
 /**

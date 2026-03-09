@@ -56,4 +56,12 @@ _Not yet provided._
 
 ## Final resolution
 
-Pending.
+**Cycle 6 Gatekeeper verification (2026-03-09):**
+
+Fix confirmed present in `src/server/middleware/auth.ts`:
+
+- Line 1: imports `createHmac` and `timingSafeEqual` from `node:crypto`.
+- Line 8: `HMAC_SALT = Buffer.alloc(32)` — fixed 32-byte zero salt.
+- Lines 17–21: `safeCompare` HMACs both inputs to fixed-length 32-byte digests before calling `timingSafeEqual`. No length-based short-circuit exists. Both inputs are digested regardless of whether they are equal.
+
+The fix is the exact proposed solution from the ticket. All three acceptance criteria met. Status: **fixed**.

@@ -26,20 +26,63 @@ const WRITE_STATEMENT_PATTERN =
 const CTE_WRITE_PATTERN = /\b(?:INSERT|UPDATE|DELETE)\b/i;
 
 /**
+ * Splits a SQL string into individual statements on `;` boundaries while
+ * being aware of quoted string literals (single-quotes, double-quotes, backticks).
+ *
+ * Semicolons that appear inside a quoted string are not treated as statement
+ * terminators.  Doubled quotes (e.g. `it''s`) are handled as the standard
+ * SQL escape sequence for a literal quote character inside a string.
+ *
+ * @param sqlStr - The raw SQL input that may contain one or more statements.
+ * @returns An array of trimmed, non-empty statement strings.
+ */
+export function splitStatements(sqlStr: string): string[] {
+  const stmts: string[] = [];
+  let current = "";
+  let inString = false;
+  let stringChar = "";
+  for (let i = 0; i < sqlStr.length; i++) {
+    const ch = sqlStr[i];
+    if (inString) {
+      current += ch;
+      if (ch === stringChar) {
+        if (sqlStr[i + 1] === stringChar) {
+          // Doubled quote is an escape sequence — consume both characters.
+          current += sqlStr[++i];
+        } else {
+          inString = false;
+        }
+      }
+    } else if (ch === "'" || ch === '"' || ch === "`") {
+      inString = true;
+      stringChar = ch;
+      current += ch;
+    } else if (ch === ";") {
+      const trimmed = current.trim();
+      if (trimmed) stmts.push(trimmed);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  const trimmed = current.trim();
+  if (trimmed) stmts.push(trimmed);
+  return stmts;
+}
+
+/**
  * Returns true when the SQL input contains any write statement keyword.
  *
  * Handles the following bypass vectors:
- * - Multi-statement queries (split on `;`, each statement checked individually)
+ * - Multi-statement queries (split on `;`, each statement checked individually,
+ *   using a string-aware splitter so semicolons in literals are not misread)
  * - REPLACE INTO (added to the block-list)
  * - PRAGMA write operations (added to the block-list)
  * - CTEs: WITH ... (INSERT|UPDATE|DELETE) patterns are detected by scanning
  *   the full statement for write keywords after a WITH clause
  */
 export function isWriteStatement(sqlStr: string): boolean {
-  const statements = sqlStr
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  const statements = splitStatements(sqlStr);
 
   for (const stmt of statements) {
     // Check if this statement starts with a write keyword.

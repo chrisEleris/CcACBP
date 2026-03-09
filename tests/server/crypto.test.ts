@@ -56,4 +56,11 @@ describe("crypto — encrypt/decrypt (PG-054)", () => {
     // Valid base64 contains only [A-Za-z0-9+/=]
     expect(/^[A-Za-z0-9+/]+=*$/.test(result)).toBe(true);
   });
+
+  it("multiple encrypt/decrypt calls with the same key all round-trip correctly (PG-071 cache)", () => {
+    const inputs = Array.from({ length: 10 }, (_, i) => `plaintext-value-${i}`);
+    const ciphertexts = inputs.map((p) => encrypt(p, TEST_SECRET));
+    const decrypted = ciphertexts.map((c) => decrypt(c, TEST_SECRET));
+    expect(decrypted).toEqual(inputs);
+  });
 });

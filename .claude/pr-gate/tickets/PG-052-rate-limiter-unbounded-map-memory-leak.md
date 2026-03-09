@@ -71,4 +71,13 @@ _Not yet provided._
 
 ## Final resolution
 
-Pending.
+**Cycle 6 Gatekeeper verification (2026-03-09):**
+
+Fix confirmed present in `src/server/middleware/rate-limit.ts`:
+
+- Lines 33–40: `setInterval` runs every `windowMs` ms and iterates the map deleting all entries where `now >= entry.resetAt`.
+- Line 43–45: `cleanupInterval.unref()` prevents the interval from keeping the process alive.
+- Lines 57–60: Emergency cap: when `store.size >= MAX_STORE_ENTRIES` (50,000), the entire map is cleared before adding the new entry, bounding worst-case memory growth.
+- Lines 80–84: `destroy()` method for test teardown.
+
+Both acceptance criteria (periodic cleanup, size cap) are met. Status: **fixed**.

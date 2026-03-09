@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "../../src/server/index";
-import { isWriteStatement } from "../../src/server/routes/query";
+import { isWriteStatement, splitStatements } from "../../src/server/routes/query";
 
 describe("Query API routes", () => {
   it("POST /api/query/execute returns query results", async () => {
@@ -267,5 +267,53 @@ describe("isWriteStatement — bypass vector tests (PG-050)", () => {
     // Note: multi-statement SELECTs pass isWriteStatement but SQLite may reject at execution;
     // the point is the write-check doesn't block them.
     expect(isWriteStatement("SELECT 1; SELECT 2")).toBe(false);
+  });
+});
+
+describe("isWriteStatement — string-literal semicolon false-positive fix (PG-070)", () => {
+  it("does not flag a semicolon inside a single-quoted string literal", () => {
+    expect(isWriteStatement("SELECT * FROM t WHERE x = 'foo; INSERT INTO t2 VALUES(1)'")).toBe(
+      false,
+    );
+  });
+
+  it("does not flag a DROP TABLE keyword inside a single-quoted string literal", () => {
+    expect(isWriteStatement("SELECT * FROM t WHERE x = 'foo; DROP TABLE t2'")).toBe(false);
+  });
+
+  it("still detects a real multi-statement write after a string-literal semicolon", () => {
+    expect(isWriteStatement("SELECT 1; DROP TABLE users")).toBe(true);
+  });
+
+  it("does not flag escaped quotes (doubled single-quotes) inside string literals", () => {
+    expect(isWriteStatement("SELECT * FROM t WHERE x = 'it''s; DELETE FROM t2'")).toBe(false);
+  });
+});
+
+describe("splitStatements — string-aware splitter (PG-070)", () => {
+  it("splits a simple two-statement query", () => {
+    expect(splitStatements("SELECT 1; SELECT 2")).toEqual(["SELECT 1", "SELECT 2"]);
+  });
+
+  it("does not split on semicolons inside single-quoted strings", () => {
+    expect(splitStatements("SELECT 'a; b'")).toEqual(["SELECT 'a; b'"]);
+  });
+
+  it("does not split on semicolons inside double-quoted identifiers", () => {
+    expect(splitStatements('SELECT "col; name" FROM t')).toEqual(['SELECT "col; name" FROM t']);
+  });
+
+  it("handles doubled single-quotes as escape sequences inside strings", () => {
+    expect(splitStatements("SELECT 'it''s fine; still one'")).toEqual([
+      "SELECT 'it''s fine; still one'",
+    ]);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(splitStatements("")).toEqual([]);
+  });
+
+  it("ignores trailing semicolons", () => {
+    expect(splitStatements("SELECT 1;")).toEqual(["SELECT 1"]);
   });
 });

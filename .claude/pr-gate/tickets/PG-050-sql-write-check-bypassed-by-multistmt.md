@@ -61,4 +61,13 @@ _Not yet provided._
 
 ## Final resolution
 
-Pending.
+**Cycle 6 Gatekeeper verification (2026-03-09):**
+
+Fix confirmed present in `src/server/routes/query.ts`:
+
+- Lines 39–71: `splitStatements()` is a string-literal-aware state machine that does not split on semicolons inside single-quoted, double-quoted, or backtick-quoted strings.
+- Lines 84–103: `isWriteStatement()` iterates every statement returned by `splitStatements`, checking each against `WRITE_STATEMENT_PATTERN`. The pattern now includes `REPLACE`, `PRAGMA`, `ATTACH`, and `DETACH`.
+- Lines 94–99: CTE-wrapped write detection (`WITH ... INSERT|UPDATE|DELETE`).
+- All four acceptance criteria verified against the passing test suite (449 tests, 0 failures).
+
+Status: **fixed**.

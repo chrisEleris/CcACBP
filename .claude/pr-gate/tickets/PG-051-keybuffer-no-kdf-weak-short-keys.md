@@ -70,4 +70,14 @@ _Not yet provided._
 
 ## Final resolution
 
-Pending.
+**Cycle 6 Gatekeeper verification (2026-03-09):**
+
+Fix confirmed present in `src/server/lib/crypto.ts`:
+
+- Lines 1–5: imports `scryptSync` from `node:crypto`.
+- Line 12: `KDF_SALT = Buffer.from("ccacbp-datasource-key-v1")` — fixed application-level salt.
+- Lines 29–35: `keyBuffer()` calls `scryptSync(secret, KDF_SALT, KEY_LENGTH)` which is a memory-hard KDF, not a raw copy. A 1-byte secret is stretched to a full 32-byte AES key with proper entropy.
+- `src/server/config.ts` lines 16–27: `superRefine` enforces `SECRET_KEY.length >= 32` in production via Zod validation.
+- `src/server/entry.ts` lines 29–34: explicit startup check rejects process if `SECRET_KEY.length < 32` in production.
+
+All three acceptance criteria are met. Status: **fixed**.
